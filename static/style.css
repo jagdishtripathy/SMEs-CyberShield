@@ -1,0 +1,705 @@
+/* === Base & Variables === */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap'); /* Import Poppins font */
+
+:root {
+    /* Color Palette */
+    --bg-dark: #0a0f1a;         /* Deep dark blue/grey background */
+    --bg-panel: #111827;        /* Slightly lighter panel background */
+    --bg-nav: #1a202c;          /* Nav background */
+    --bg-input: #1f2937;        /* Input/select background */
+    --text-primary: #e5e7eb;    /* Light grey primary text */
+    --text-secondary: #9ca3af;  /* Muted grey secondary text */
+    --accent-primary: #22d3ee;    /* Bright Cyan */
+    --accent-secondary: #0ea5e9;  /* Sky Blue */
+    --accent-glow: rgba(34, 211, 238, 0.4); /* Glow effect for cyan */
+    --border-color: #374151;     /* Subtle border color */
+    --error-bg: #4f1a2a;         /* Dark red background for general errors */
+    --error-text: #fca5a5;       /* Light red text for errors */
+    --error-border: #dc2626;     /* Brighter red border for errors */
+    --success-color: #34d399;    /* Green for success/active */
+    --warning-color: #facc15;    /* Yellow for warnings */
+    --info-color: var(--accent-secondary); /* Blue for info (using accent) */
+    --debug-color: #a855f7;      /* Purple for debug */
+
+
+    /* Typography */
+    --font-primary: 'Poppins', sans-serif;
+    --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+
+    /* Other */
+    --panel-border-radius: 6px;
+    --nav-height: 60px; /* Slightly taller nav */
+}
+
+/* === General Body & Base === */
+body {
+    font-family: var(--font-primary);
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* === Icon Styling (Placeholder) === */
+/* Add real icon styles here */
+.icon {
+    display: inline-block;
+    margin-right: 8px;
+    font-style: normal;
+    vertical-align: middle;
+    width: 1em; /* Example size */
+    height: 1em; /* Example size */
+    /* background-color: var(--text-secondary); */ /* Placeholder viz */
+}
+/* Example specific icon */
+.icon-dashboard::before { content: '📊'; /* Or use FontAwesome class/SVG bg */}
+.icon-analysis::before { content: ' L'; /* Or use FontAwesome class/SVG bg */}
+.icon-threat::before { content: '🛡️'; /* Or use FontAwesome class/SVG bg */}
+.icon-reports::before { content: '📄'; /* Or use FontAwesome class/SVG bg */}
+.icon-config::before { content: '⚙️'; /* Or use FontAwesome class/SVG bg */}
+.icon-logout::before { content: '🚪'; /* Or use FontAwesome class/SVG bg */}
+.icon-sigma::before { content: 'Σ'; font-weight: bold; }
+.icon-severity::before { content: '⚠️';}
+.icon-category::before { content: '🏷️';}
+.icon-timeline::before { content: '📈';}
+.icon-toplist::before { content: '🏆';}
+.icon-logs::before { content: '📜';}
+.icon-snort::before { content: '🐽';} /* Just examples! */
+.icon-health::before { content: '💓';}
+
+
+/* === Navigation Bar === */
+nav {
+    background-color: var(--bg-nav);
+    padding: 0 25px;
+    display: flex;
+    align-items: center;
+    color: var(--text-primary);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--nav-height);
+    box-sizing: border-box;
+    z-index: 1000; /* Ensure nav is below modal overlay (modal uses 1000 or higher) */
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+nav .logo {
+    font-weight: 700;
+    font-size: 1.5em;
+    color: var(--accent-primary);
+    margin-right: 40px;
+    text-shadow: 0 0 5px var(--accent-glow);
+}
+
+nav a.nav-link {
+    text-decoration: none;
+    color: var(--text-secondary);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    box-sizing: border-box;
+    border-bottom: 4px solid transparent;
+    transition: color 0.2s ease, background-color 0.2s ease, border-bottom-color 0.2s ease;
+}
+
+nav a.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-secondary);
+}
+
+nav a.nav-link.active {
+    background-color: rgba(34, 211, 238, 0.1);
+    color: var(--accent-primary);
+    font-weight: 600;
+    border-bottom-color: var(--accent-primary);
+}
+
+nav .user-info {
+    font-size: 0.9em;
+    margin-left: auto;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+nav .user-info span,
+nav .user-info a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    padding: 0;
+    background: none;
+    border: none;
+}
+nav .user-info a:hover {
+    color: var(--accent-primary);
+    text-decoration: underline;
+}
+
+nav .user-info #logout-link {
+    color: var(--accent-secondary);
+}
+nav .user-info #logout-link:hover {
+    color: var(--accent-primary);
+}
+
+/* === Main Content Area === */
+main.main-container {
+    margin-top: var(--nav-height);
+    padding: 0;
+}
+
+/* === Tab Content Styling === */
+.content-section {
+    display: none;
+    padding: 30px;
+    background-color: var(--bg-dark);
+    min-height: calc(100vh - var(--nav-height));
+    box-sizing: border-box;
+}
+
+.content-section.active {
+    display: block;
+}
+
+/* === Section Header (Titles/Filters Wrapper) === */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* === Filters Bar === */
+.filters {
+    padding: 0;
+    background-color: transparent;
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.filters label {
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-right: 0;
+}
+
+.filters input[type="date"],
+.filters select {
+    padding: 8px 12px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--panel-border-radius);
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.filters input[type="date"]:focus,
+.filters select:focus {
+    outline: none;
+    border-color: var(--accent-secondary);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+}
+
+.filters select {
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239ca3af%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 10px auto;
+    padding-right: 30px;
+}
+
+.filters button {
+    padding: 9px 20px;
+    background-color: var(--accent-secondary);
+    color: var(--bg-dark);
+    font-weight: 600;
+    border: none;
+    border-radius: var(--panel-border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.filters button:hover {
+    background-color: var(--accent-primary);
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+
+/* === Dashboard Grid & Panels === */
+.dashboard-grid, .threat-detection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 25px;
+    padding: 0;
+}
+
+.panel {
+    border: 1px solid var(--border-color);
+    padding: 0;
+    background-color: var(--bg-panel);
+    border-radius: var(--panel-border-radius);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex; /* Use flex for panel structure */
+    flex-direction: column; /* Stack header and content */
+}
+
+.panel-header {
+    padding: 15px 25px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: rgba(255, 255, 255, 0.03);
+    flex-shrink: 0; /* Prevent header shrinking */
+}
+
+.panel-header h2, .panel-header h3 {
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+}
+.panel-header .icon {
+    color: var(--accent-secondary);
+    font-size: 1.1em;
+}
+
+.panel-content {
+    padding: 25px;
+    flex-grow: 1; /* Allow content to fill space */
+    position: relative; /* Needed for Chart.js responsiveness */
+    min-height: 250px; /* Minimum height for chart panels */
+    display: flex; /* Use flex to help center chart */
+    justify-content: center;
+    align-items: center;
+}
+
+/* Total Events Panel Styling */
+.total-count-display {
+    font-size: 3em;
+    font-weight: 700;
+    color: var(--accent-primary);
+    display: block;
+    text-align: center;
+    line-height: 1.2;
+    margin-top: 10px;
+}
+.total-logs-panel .panel-content {
+    padding-bottom: 10px;
+    display: flex; /* Center the number vertically */
+    align-items: center;
+    justify-content: center;
+    min-height: 150px; /* Adjust min-height for this specific panel */
+}
+
+
+/* === Chart Styling (Container) === */
+.panel-content canvas {
+    max-width: 100%;
+    max-height: 100%; /* Allow canvas to fill panel content area */
+}
+
+
+/* === Real-time Log Viewer Styles === */
+.log-viewer-container.panel .panel-content {
+    padding: 0; /* Remove padding for pre */
+    display: block; /* Override flex centering */
+}
+
+.log-viewer-container h3 {
+    /* Panel header styles already applied */
+}
+
+.log-output {
+    background-color: #000; /* Keep black bg for logs */
+    color: #ccc; /* Default log text color */
+    padding: 20px;
+    border-radius: 4px;
+    height: 65vh;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    white-space: pre;
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+    margin-bottom: 15px; /* Space before status/button */
+}
+
+.log-output .log-line {
+    display: block; /* Fix overlap */
+    /* line-height: 1.4; */ /* Optional: Adjust line spacing */
+}
+
+/* Style specific log levels using theme variables */
+.log-output .log-line.error { color: var(--error-text); background-color: transparent; }
+.log-output .log-line.warning { color: var(--warning-color); background-color: transparent; }
+.log-output .log-line.info { color: var(--info-color); background-color: transparent; }
+.log-output .log-line.success { color: var(--success-color); background-color: transparent; }
+.log-output .log-line.debug { color: var(--debug-color); background-color: transparent; }
+/* Add other log type styles as needed */
+.log-output .log-line.accepted { color: var(--success-color); }
+.log-output .log-line.disconnected { color: var(--text-secondary); }
+.log-output .log-line.invalid { color: var(--warning-color); }
+.log-output .log-line.failed { color: var(--error-text); }
+
+
+.log-status {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-left: 20px; /* Indent status/button like log padding */
+    padding-right: 20px;
+    font-style: normal;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+#refresh-logs-button {
+     margin: 0 20px 20px 20px; /* Match padding */
+     padding: 9px 20px;
+     background-color: var(--accent-secondary);
+     color: var(--bg-dark);
+     font-weight: 600;
+     border: none;
+     border-radius: var(--panel-border-radius);
+     cursor: pointer;
+     transition: background-color 0.2s ease, box-shadow 0.2s ease;
+ }
+ #refresh-logs-button:hover {
+     background-color: var(--accent-primary);
+     box-shadow: 0 0 10px var(--accent-glow);
+ }
+
+
+/* === Snort Alerts & System Health === */
+
+/* System Health Styling */
+#system-health-container.panel-content {
+    display: block; /* Override flex centering */
+}
+#system-health-container p {
+    margin: 8px 0;
+    font-size: 0.95em;
+    color: var(--text-primary);
+}
+#system-health-container #system-health-status { /* Specific status */
+    color: var(--text-secondary);
+    font-style: italic;
+}
+#system-health-container .health-value {
+    font-weight: 600;
+    color: var(--accent-secondary);
+    margin-left: 5px;
+}
+#system-health-container .health-value.error {
+    color: var(--error-text);
+}
+
+/* Snort Alert Styling */
+#snort-alerts-container.panel-content {
+    padding: 0; /* Remove padding, list items have it */
+     display: block; /* Override flex centering */
+}
+#snort-alerts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--panel-border-radius);
+    background-color: rgba(0, 0, 0, 0.1);
+}
+#snort-status { /* Status message styling */
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+
+.snort-alert-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    border-left: 5px solid var(--text-secondary); /* Default */
+    transition: background-color 0.2s ease, border-left-color 0.2s ease;
+    line-height: 1.4;
+}
+.snort-alert-item:last-child { border-bottom: none; }
+.snort-alert-item:hover { background-color: rgba(255, 255, 255, 0.05); }
+
+/* Snort Priority Colors */
+.snort-alert-item.priority-1 { border-left-color: var(--error-border); }
+.snort-alert-item.priority-2 { border-left-color: var(--warning-color); }
+.snort-alert-item.priority-3 { border-left-color: var(--info-color); }
+.snort-alert-item.priority-4 { border-left-color: var(--accent-primary); } /* Using accent for info priority */
+
+.alert-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; flex-wrap: wrap; gap: 10px; }
+.alert-timestamp { font-size: 0.85em; color: var(--text-secondary); }
+.alert-priority { font-size: 0.8em; font-weight: 600; padding: 2px 6px; border-radius: 3px; color: var(--bg-panel); }
+.alert-priority.priority-1 { background-color: var(--error-border); }
+.alert-priority.priority-2 { background-color: var(--warning-color); }
+.alert-priority.priority-3 { background-color: var(--info-color); }
+.alert-priority.priority-4 { background-color: var(--accent-primary); }
+.alert-message { font-size: 1em; color: var(--text-primary); margin-bottom: 8px; font-weight: 400; }
+.alert-details { font-size: 0.85em; color: var(--text-secondary); margin-bottom: 8px; display: flex; gap: 15px; flex-wrap: wrap; }
+.alert-classification, .alert-protocol { background-color: var(--bg-input); padding: 2px 6px; border-radius: 3px; color: var(--text-secondary); }
+.alert-network { font-size: 0.9em; font-family: var(--font-mono); color: var(--accent-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
+.alert-ip.source { color: var(--accent-secondary); }
+.alert-ip.dest { color: var(--accent-primary); }
+.alert-arrow { color: var(--text-secondary); }
+
+#snort-alerts-list li.error-message { color: var(--error-text); padding: 15px 20px; border-left: 5px solid var(--error-border); background-color: rgba(220, 38, 38, 0.1); }
+
+
+/* === Login Page Styles === */
+.login-container { width: 400px; margin: 120px auto; padding: 40px; border: 1px solid var(--border-color); border-radius: var(--panel-border-radius); background-color: var(--bg-panel); box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3); }
+.login-container h2 { text-align: center; margin-bottom: 30px; color: var(--accent-primary); font-size: 1.8em; font-weight: 700; text-shadow: 0 0 5px var(--accent-glow); }
+.login-container label { display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-secondary); }
+.login-container input[type="text"], .login-container input[type="password"] { width: 100%; padding: 12px 15px; margin-bottom: 20px; box-sizing: border-box; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--panel-border-radius); color: var(--text-primary); font-family: var(--font-primary); font-size: 1em; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.login-container input[type="text"]:focus, .login-container input[type="password"]:focus { outline: none; border-color: var(--accent-secondary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3); }
+.login-container button { width: 100%; padding: 14px; background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary)); color: var(--bg-dark); border: none; border-radius: var(--panel-border-radius); cursor: pointer; font-size: 1.1em; font-weight: 700; transition: transform 0.2s ease, box-shadow 0.2s ease; margin-top: 10px; }
+.login-container button:hover { transform: scale(1.02); box-shadow: 0 0 15px var(--accent-glow); }
+
+/* General Error box style */
+.error { color: var(--error-text); background-color: var(--error-bg); border: 1px solid var(--error-border); padding: 12px 15px; margin-top: 20px; border-radius: var(--panel-border-radius); text-align: center; font-size: 0.95em; }
+
+
+/* === Scrollbar Styling === */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-input); border-radius: 5px; }
+::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 5px; border: 2px solid var(--bg-input); }
+::-webkit-scrollbar-thumb:hover { background-color: var(--text-secondary); }
+/* html { scrollbar-color: var(--border-color) var(--bg-input); scrollbar-width: thin; } */ /* Firefox */
+
+
+/* === Report Section Styles === */
+.report-generator .panel-content {
+    display: block; /* Override flex centering */
+}
+#report-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.filter-group label {
+    font-weight: 400;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+.filter-group input[type="date"],
+.filter-group select {
+    padding: 8px 12px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--panel-border-radius);
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.filter-group input[type="date"]:focus,
+.filter-group select:focus {
+    outline: none;
+    border-color: var(--accent-secondary);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+}
+.filter-group select {
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%239ca3af%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 10px auto;
+    padding-right: 30px;
+}
+
+.report-actions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.report-actions button {
+    padding: 10px 22px;
+    background-color: var(--accent-primary);
+    color: var(--bg-dark);
+    font-weight: 600;
+    border: none;
+    border-radius: var(--panel-border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    font-size: 1em;
+}
+.report-actions button:hover {
+    background-color: var(--accent-secondary);
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+.report-actions button#generatePdfReportBtn { /* Different color for PDF? */
+    background-color: var(--accent-secondary);
+}
+.report-actions button#generatePdfReportBtn:hover {
+     background-color: var(--accent-primary);
+ }
+
+.report-status-message {
+    margin-top: 15px;
+    padding: 10px 15px;
+    border-radius: var(--panel-border-radius);
+    font-size: 0.95em;
+    display: none; /* Initially hidden */
+}
+.report-status-message.success {
+    background-color: rgba(52, 211, 153, 0.1); /* Use success color */
+    border: 1px solid var(--success-color);
+    color: var(--success-color);
+    display: block;
+}
+.report-status-message.error {
+    background-color: var(--error-bg);
+    border: 1px solid var(--error-border);
+    color: var(--error-text);
+    display: block;
+}
+.report-status-message.loading {
+    background-color: rgba(14, 165, 233, 0.1); /* Use info color */
+    border: 1px solid var(--info-color);
+    color: var(--info-color);
+    display: block;
+}
+
+
+/* ===================================================== */
+/* == START: Pop-up Modal Styles (IP Block Notification) == */
+/* ===================================================== */
+.popup-modal {
+    /* display: none; */ /* Controlled by JS now */
+    position: fixed;      /* Stay in place */
+    z-index: 1050;        /* Sit on top (higher than nav) */
+    left: 0;
+    top: 0;
+    width: 100%;          /* Full width */
+    height: 100%;         /* Full height */
+    overflow: auto;       /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.7); /* Darker overlay */
+    /* Use Flexbox to center the content */
+    display: flex;        /* Use 'flex' to enable centering */
+    align-items: center;
+    justify-content: center;
+}
+
+.popup-content {
+    background-color: var(--bg-panel); /* Use panel background */
+    margin: auto; /* Center horizontally (alternative to flex justify) */
+    padding: 25px 30px; /* More padding */
+    border: 1px solid var(--border-color); /* Use theme border */
+    border-radius: var(--panel-border-radius); /* Use theme radius */
+    width: 90%; /* Responsive width */
+    max-width: 480px; /* Max width */
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4); /* Stronger shadow */
+    position: relative; /* For positioning the close button */
+    text-align: center; /* Center text */
+    color: var(--text-primary); /* Use primary text color */
+}
+
+.popup-content h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--error-text); /* Reddish color for alert title */
+    font-size: 1.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center title content */
+}
+.popup-content h3 .icon { /* Style icon in title */
+    margin-right: 10px;
+    font-size: 1.2em; /* Make icon slightly larger */
+    color: var(--error-border); /* Use brighter red for icon */
+}
+
+
+.popup-content p {
+    margin-bottom: 15px;
+    line-height: 1.5;
+    font-size: 1em;
+    color: var(--text-secondary); /* Use secondary text for description */
+}
+.popup-content p:last-of-type { /* Spacing before button */
+    margin-bottom: 25px;
+}
+
+.popup-content strong#blockedIpAddress {
+    font-family: var(--font-mono); /* Good for IP addresses */
+    font-size: 1.2em;
+    color: var(--accent-primary); /* Highlight IP */
+    background-color: var(--bg-input); /* Subtle background */
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.popup-content button {
+    padding: 10px 25px;
+    background-color: var(--accent-secondary); /* Use theme button color */
+    color: var(--bg-dark); /* Text color for button */
+    font-weight: 600;
+    border: none;
+    border-radius: var(--panel-border-radius);
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.popup-content button:hover {
+    background-color: var(--accent-primary); /* Hover color */
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Style the close button */
+.close-button {
+    color: var(--text-secondary); /* Muted color */
+    position: absolute;           /* Position relative to popup-content */
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1; /* Ensure consistent vertical alignment */
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: var(--text-primary); /* Brighter on hover */
+    text-decoration: none;
+    outline: none;
+}
+/* ===================================================== */
+/* == END: Pop-up Modal Styles                         == */
+/* ===================================================== */

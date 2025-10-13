@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INTRUSENSE SIEM Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body>
+    <nav role="navigation">
+        <div class="logo">INTRUSENSE</div>
+        <a href="#" id="nav-dashboard" class="nav-link active" data-target="dashboard-content"><i class="icon icon-dashboard"></i> Dashboard</a>
+        <a href="#" id="nav-analysis" class="nav-link" data-target="analysis-content"><i class="icon icon-analysis"></i> Analysis</a>
+        <a href="#" id="nav-environment" class="nav-link" data-target="environment-content"><i class="icon icon-threat"></i> Threat Detection</a>
+        <a href="#" id="nav-reports" class="nav-link" data-target="reports-content"><i class="icon icon-reports"></i> Reports</a>
+        <a href="#" id="nav-configuration" class="nav-link" data-target="configuration-content"><i class="icon icon-config"></i> Configuration</a>
+        <div class="user-info">
+            <span>Welcome Admin</span> |
+            <a href="#">Data Report</a> |
+            <a href="#">Settings</a> |
+            <a href="#">Support</a> |
+            <a href="#" id="logout-link"><i class="icon icon-logout"></i> Logout</a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+
+        <section id="dashboard-content" class="content-section active" aria-labelledby="dashboard-title">
+            <header class="section-header">
+                 <h2 id="dashboard-title">Dashboard Overview</h2>
+                 <form class="filters">
+                     <label for="startDate">Start Date:</label>
+                     <input type="date" id="startDate">
+                     <label for="endDate">End Date:</label>
+                     <input type="date" id="endDate">
+                     <label for="logLevel">Log Level:</label>
+                     <select id="logLevel">
+                         <option value="all">All</option>
+                         <option value="sshd">sshd</option>
+                         <option value="session">session</option>
+                         <option value="Accepted">Accepted</option>
+                         <option value="Disconnected">Disconnected</option>
+                         <option value="Invalid">Invalid</option>
+                         <option value="Failed">Failed</option>
+                         <option value="INFO">INFO</option>
+                         <option value="WARNING">WARNING</option>
+                         <option value="ERROR">ERROR</option>
+                         <option value="DEBUG">DEBUG</option>
+                     </select>
+                     <button type="button" id="applyFilters">Apply</button>
+                 </form>
+            </header>
+            <div class="dashboard-grid">
+                <div class="panel total-logs-panel">
+                    <header class="panel-header">
+                         <h2><i class="icon icon-sigma"></i> Total Events</h2>
+                    </header>
+                    <div class="panel-content">
+                         <span id="total-log-count" class="total-count-display">0</span>
+                    </div>
+                </div>
+
+                <div class="panel">
+                     <header class="panel-header">
+                         <h2><i class="icon icon-severity"></i> Log Severity Distribution</h2>
+                     </header>
+                     <div class="panel-content">
+                         <canvas id="barChart1"></canvas> </div>
+                </div>
+
+                <div class="panel">
+                     <header class="panel-header">
+                         <h2><i class="icon icon-category"></i> Log Category Breakdown</h2>
+                     </header>
+                     <div class="panel-content">
+                         <canvas id="pieChart"></canvas> </div>
+                </div>
+
+                <div class="panel">
+                     <header class="panel-header">
+                         <h2><i class="icon icon-timeline"></i> Events Over Time by Severity</h2>
+                     </header>
+                     <div class="panel-content">
+                         <canvas id="lineChart"></canvas> </div>
+                </div>
+
+                <div class="panel">
+                    <header class="panel-header">
+                         <h2><i class="icon icon-toplist"></i> Top Issue Categories</h2>
+                    </header>
+                    <div class="panel-content">
+                         <canvas id="barChart3"></canvas> </div>
+                </div>
+
+                <div class="panel" id="panel-barchart2" style="display: none;">
+                     <header class="panel-header">
+                         <h2><i class="icon icon-active-benchmarks"></i> Active Benchmarks</h2>
+                     </header>
+                     <div class="panel-content">
+                         <canvas id="barChart2"></canvas>
+                     </div>
+                </div>
+                <div class="panel" id="panel-radarchart" style="display: none;">
+                    <header class="panel-header">
+                         <h2><i class="icon icon-source-ip"></i> Distribution by Source IP</h2>
+                    </header>
+                    <div class="panel-content">
+                         <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+             </div>
+        </section>
+
+        <section id="analysis-content" class="content-section" aria-labelledby="analysis-title">
+             <h2 id="analysis-title">Analysis</h2>
+             <p>This section shows live log events as they happen.</p>
+
+             <div class="log-viewer-container panel">
+                 <header class="panel-header">
+                     <h3><i class="icon icon-logs"></i> Real-time Logs (/var/log/auth.log)</h3>
+                 </header>
+                 <div class="panel-content">
+                     <pre id="realtime-log-output" class="log-output" aria-live="polite"></pre>
+                     <p id="log-status" class="log-status" role="status">Connecting...</p>
+                     <button id="refresh-logs-button">Refresh Logs</button>
+                 </div>
+             </div>
+        </section>
+
+        <section id="environment-content" class="content-section" aria-labelledby="environment-title">
+             <h2 id="environment-title">Threat Detection</h2>
+             <p>This section displays threat detection information and Snort alerts.</p>
+
+             <div class="threat-detection-grid">
+                 <div class="panel">
+                     <header class="panel-header">
+                         <h3><i class="icon icon-snort"></i> Snort Alerts</h3>
+                     </header>
+                     <div id="snort-alerts-container" class="panel-content">
+                         <p id="snort-status" role="status">Loading Snort alerts...</p>
+                         <ul id="snort-alerts-list" aria-live="polite"></ul>
+                     </div>
+                 </div>
+                 <div class="panel">
+                     <header class="panel-header">
+                          <h3><i class="icon icon-health"></i> System Health</h3>
+                     </header>
+                     <div id="system-health-container" class="panel-content" aria-live="polite">
+                          <p id="system-health-status" role="status">Loading System Health...</p>
+                          <p id="cpu-usage">CPU Usage: </p>
+                          <p id="memory-usage">Memory Usage: </p>
+                      </div>
+                 </div>
+             </div>
+        </section>
+
+        <section id="reports-content" class="content-section" aria-labelledby="reports-title">
+             <h2 id="reports-title">Reports</h2>
+             <p>Generate reports based on collected data.</p>
+
+             <div class="report-generator panel"> <header class="panel-header">
+                     <h3>Snort Alert Report Generator</h3>
+                 </header>
+                 <div class="panel-content">
+                     <form id="report-filters">
+                         <div class="filter-group">
+                             <label for="reportStartDate">Start Date:</label>
+                             <input type="date" id="reportStartDate">
+                         </div>
+                         <div class="filter-group">
+                             <label for="reportEndDate">End Date:</label>
+                             <input type="date" id="reportEndDate">
+                         </div>
+                         <div class="filter-group">
+                             <label for="reportPriority">Min Priority:</label>
+                             <select id="reportPriority">
+                                 <option value="">All</option>
+                                 <option value="1">1 (High)</option>
+                                 <option value="2">2 (Medium)</option>
+                                 <option value="3">3 (Low)</option>
+                                 <option value="4">4 (Info)</option>
+                             </select>
+                         </div>
+                         </form>
+
+                     <div class="report-actions">
+                         <button id="generateHtmlReportBtn">Generate HTML Report</button>
+                         <button id="generatePdfReportBtn">Generate PDF Report</button>
+                     </div>
+
+                     <div id="report-status" class="report-status-message">
+                         </div>
+                 </div>
+             </div>
+        </section>
+
+        <section id="configuration-content" class="content-section" aria-labelledby="configuration-title">
+             <h2 id="configuration-title">Configuration</h2>
+             <p>Configuration settings will go here.</p>
+        </section>
+
+    </main>
+
+    <div id="ipBlockedPopup" class="popup-modal" role="dialog" aria-modal="true" aria-labelledby="popupTitle" style="display: none;">
+        <div class="popup-content">
+            <span class="close-button" onclick="hideIpBlockedPopup()" title="Close" aria-label="Close">&times;</span>
+            <h3 id="popupTitle"><i class="icon icon-threat"></i> IP Address Blocked</h3>
+            <p>The following IP address has been blocked by the Snort IPS:</p>
+            <p><strong id="blockedIpAddress"></strong></p>
+            <button onclick="hideIpBlockedPopup()">OK</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
