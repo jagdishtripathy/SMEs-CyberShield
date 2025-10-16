@@ -1,3 +1,4 @@
+# app.py — corrected version
 from flask_cors import CORS
 from flask import Flask, jsonify, request, redirect, url_for, session, send_from_directory, Response
 from elasticsearch import Elasticsearch
@@ -6,12 +7,11 @@ import threading
 import os
 import json
 import logging
-import datetime
+from datetime import datetime, timezone
 import subprocess
 import pdfkit  # For PDF report generation
-import tempfile # For temporary file handling
-from datetime import datetime, timezone
-
+import tempfile  # For temporary file handling
+from chatbot import init_app as init_chatbot  # Import chatbot initialization
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
@@ -20,23 +20,42 @@ app.secret_key = os.urandom(24)
 logging.basicConfig(level=logging.DEBUG)
 
 # --- Elasticsearch Configuration ---
+es = None
 try:
     es = Elasticsearch(
         ["http://localhost:9200"],
         basic_auth=("elastic", "123456"),
         request_timeout=30
     )
+    # ping returns boolean; if it fails treat as unavailable
     if not es.ping():
-        logging.error("Elasticsearch connection failed!")
+        logging.error("Elasticsearch ping failed — elasticsearch may be down or credentials/URL wrong.")
+        es = None
+    else:
+        logging.info("Connected to Elasticsearch")
 except Exception as e:
     logging.error(f"Error connecting to Elasticsearch: {e}")
     es = None
 
+# Ensure index exists (optional)
+def ensure_index(index_name="siem-logs"):
+    if not es:
+        return
+    try:
+        if not es.indices.exists(index=index_name):
+            logging.info(f"Creating index: {index_name}")
+            es.indices.create(index=index_name)
+    except Exception as e:
+        logging.error(f"Error ensuring index {index_name}: {e}")
+
+if es:
+    ensure_index("siem-logs")
+
 # --- Log File Configuration ---
 log_file = "/var/log/auth.log"
-snort_log_file = "/var/log/snort/alert"
-pdf_save_path = "/tmp/save_reports"  # Change this to your desired save path
-os.makedirs(pdf_save_path, exist_ok=True) #creates the folder if it does not exist.
+snort_log_file = "/var/log/snort/alert"  # ensure this path is correct and readable
+pdf_save_path = "/tmp/save_reports"
+os.makedirs(pdf_save_path, exist_ok=True)
 
 # --- Background Thread for Indexing Logs to Elasticsearch ---
 def collect_logs():
@@ -57,7 +76,7 @@ def collect_logs():
                         "message": line.strip()
                     }
                     try:
-                        res = es.index(index="siem-logs", document=log_entry)
+                        es.index(index="siem-logs", document=log_entry)
                     except Exception as e:
                         logging.error(f"Error indexing log: {e}")
                 else:
@@ -67,7 +86,7 @@ def collect_logs():
     except Exception as e:
         logging.error(f"Error in log collection thread: {e}")
 
-# --- NEW: Real-time Log Streaming Function (SSE Generator) ---
+# --- Real-time Log Streaming Function (SSE Generator) ---
 def get_log_stream():
     logging.info(f"Starting SSE log stream for {log_file}")
     try:
@@ -86,22 +105,23 @@ def get_log_stream():
         logging.error(f"Error in log streaming generator: {e}")
         yield f"data: ERROR: Could not read log file - {e}\n\n"
 
-# --- NEW: SSE Route ---
+# --- SSE Route ---
 @app.route('/stream-realtime-logs')
 def stream_realtime_logs():
-    if 'logged_in' not in session or not session['logged_in']:
+    if 'logged_in' not in session or not session.get('logged_in'):
         logging.warning("Unauthorized attempt to access log stream.")
         return Response("data: ERROR: Unauthorized\n\n", mimetype='text/event-stream'), 401
     return Response(get_log_stream(), mimetype='text/event-stream')
 
-# --- Existing Routes (Modified slightly for clarity/robustness) ---
+# --- Existing Routes ---
 @app.route('/logs', methods=['GET'])
 def get_logs():
     if not es:
         return jsonify({"error": "Elasticsearch not available"}), 503
-    if 'logged_in' not in session or not session['logged_in']:
+    if 'logged_in' not in session or not session.get('logged_in'):
         logging.warning("Unauthorized attempt to access /logs.")
         return jsonify({"error": "Unauthorized"}), 401
+
     query = {"size": 100, "sort": [{"timestamp": "desc"}], "query": {"bool": {"must": []}}}
     start_date = request.args.get('startDate')
     end_date = request.args.get('endDate')
@@ -131,6 +151,7 @@ def login():
     username = request.form.get('username')
     password = request.form.get('password')
     logging.debug(f"Login attempt: username={username}")
+    # TODO: replace with secure auth / hashed passwords
     if username == "admin" and password == "password":
         session['logged_in'] = True
         logging.debug("Login successful, session set.")
@@ -146,10 +167,15 @@ def logout():
     logging.debug("User logged out.")
     return jsonify({"success": True})
 
+# Route to serve chatbot static files
+@app.route('/chatbot/static/<path:filename>')
+def chatbot_static(filename):
+    return send_from_directory('chatbot/static', filename)
+
 @app.route('/dashboard')
 def dashboard():
     logging.debug(f"Dashboard route accessed, session logged_in: {session.get('logged_in')}")
-    if 'logged_in' in session and session['logged_in']:
+    if session.get('logged_in'):
         logging.debug("Serving index.html")
         return send_from_directory(app.static_folder, 'index.html')
     else:
@@ -160,39 +186,60 @@ def dashboard():
 def login_page():
     logging.debug("Serving login.html")
     return send_from_directory(app.static_folder, 'login.html')
-    
-# --- NEW: Snort Alerts Route ---
+
+# --- Snort Alerts Route ---
 @app.route('/snort-alerts')
 def get_snort_alerts():
-    if 'logged_in' not in session or not session['logged_in']:
+    if 'logged_in' not in session or not session.get('logged_in'):
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
+        logging.info(f"Reading Snort log file from: {snort_log_file}")
+
+        if not os.path.exists(snort_log_file):
+            logging.error(f"Snort log file does not exist: {snort_log_file}")
+            return jsonify({"error": f"Log file not found at {snort_log_file}"}), 404
+
         with open(snort_log_file, "r") as file:
             lines = file.readlines()
-            alerts = [{"message": line.strip()} for line in lines[-10:]]
-            return jsonify(alerts)
-    except FileNotFoundError:
-        return jsonify({"error": "Snort alert log file not found"}), 404
+
+        logging.info(f"Found {len(lines)} lines in Snort log")
+
+        if not lines:
+            return jsonify({"message": "No alerts found in Snort log."})
+
+        alerts = [{"message": line.strip()} for line in lines[-50:]]
+        logging.info(f"Returning {len(alerts)} alerts to client.")
+        return jsonify(alerts)
+
+    except PermissionError:
+        logging.error("Permission denied reading snort log.")
+        return jsonify({"error": "Permission denied to read snort log file"}), 403
     except Exception as e:
+        logging.error(f"Unexpected error reading snort log: {e}")
         return jsonify({"error": str(e)}), 500
 
-#--- System Health Route ---
+
+# --- System Health Route ---
 @app.route('/system-health')
 def get_system_health():
-    if 'logged_in' not in session or not session['logged_in']:
+    if 'logged_in' not in session or not session.get('logged_in'):
         return jsonify({"error": "Unauthorized"}), 401
     try:
-        cpu_usage = float(subprocess.check_output("top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\\([0-9.]*\\)%* id.*/\\1/'", shell=True))
+        # Note: these commands are Linux-specific
+        cpu_idle = float(subprocess.check_output("top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\\([0-9.]*\\)%* id.*/\\1/'", shell=True))
+        cpu_usage = 100.0 - cpu_idle
         memory_usage = float(subprocess.check_output("free | grep Mem | awk '{print $3/$2 * 100.0}'", shell=True))
-        return jsonify({"cpu_usage": 100-cpu_usage,"memory_usage": memory_usage})
+        return jsonify({"cpu_usage": cpu_usage, "memory_usage": memory_usage})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- NEW: Refresh Logs Route ---
+# --- Refresh Logs Route ---
 @app.route('/refresh-logs')
 def refresh_logs():
-    if 'logged_in' not in session or not session['logged_in']:
+    if not es:
+        return jsonify({"error": "Elasticsearch not available"}), 503
+    if 'logged_in' not in session or not session.get('logged_in'):
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
@@ -205,10 +252,10 @@ def refresh_logs():
         logging.error(f"Error refreshing logs: {e}")
         return jsonify({"error": str(e)}), 500
 
-# --- NEW: Generate Snort Report Routes ---
+# --- Generate Snort Report Routes ---
 @app.route('/generate-report/snort/html', methods=['GET'])
 def generate_snort_html_report():
-    if 'logged_in' not in session or not session['logged_in']:
+    if 'logged_in' not in session or not session.get('logged_in'):
         return jsonify({"error": "Unauthorized"}), 401
 
     start_date = request.args.get('startDate')
@@ -221,11 +268,16 @@ def generate_snort_html_report():
         filtered_alerts = []
         for line in lines:
             if start_date and end_date:
+                # Try to parse date from format at start of line. Adjust format if your snort format differs.
                 try:
-                    line_date = datetime.datetime.strptime(line.split('[**]')[0].strip(), "%m/%d/%y-%H:%M:%S.%f")
-                    if datetime.datetime.strptime(start_date, "%Y-%m-%d").date() <= line_date.date() <= datetime.datetime.strptime(end_date, "%Y-%m-%d").date():
+                    # Example parse — adjust to match your alert format
+                    # e.g., "10/16/25-12:34:56.123456 [**] ..." => "%m/%d/%y-%H:%M:%S.%f"
+                    token = line.split('[**]')[0].strip()
+                    line_date = datetime.strptime(token, "%m/%d/%y-%H:%M:%S.%f")
+                    if datetime.strptime(start_date, "%Y-%m-%d").date() <= line_date.date() <= datetime.strptime(end_date, "%Y-%m-%d").date():
                         filtered_alerts.append(line)
-                except ValueError:
+                except Exception:
+                    # If parsing fails, include line (safer fallback)
                     filtered_alerts.append(line)
             else:
                 filtered_alerts.append(line)
@@ -242,23 +294,25 @@ def generate_snort_html_report():
 
     except FileNotFoundError:
         return jsonify({"error": "Snort alert log file not found"}), 404
+    except PermissionError:
+        return jsonify({"error": "Permission denied reading snort log file"}), 403
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/generate-report/snort/pdf', methods=['GET'])
 def generate_snort_pdf_report():
-    if 'logged_in' not in session or not session['logged_in']:
+    if 'logged_in' not in session or not session.get('logged_in'):
         return jsonify({"error": "Unauthorized"}), 401
-
-    start_date = request.args.get('startDate')
-    end_date = request.args.get('endDate')
 
     try:
         html_response = generate_snort_html_report()
+        # If html_response is a JSON error response (tuple), return it
+        if isinstance(html_response, tuple):
+            return html_response
         if html_response.status_code != 200:
             return html_response
 
-        html_content = html_response.data.decode('utf-8')
+        html_content = html_response.get_data(as_text=True)
 
         pdf_options = {
             'page-size': 'Letter',
@@ -270,19 +324,28 @@ def generate_snort_pdf_report():
         }
         pdf = pdfkit.from_string(html_content, False, options=pdf_options)
 
-        # Save the PDF to the server
-        filename = "snort_report_" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".pdf"
+        filename = "snort_report_" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".pdf"
         filepath = os.path.join(pdf_save_path, filename)
 
         with open(filepath, "wb") as f:
             f.write(pdf)
 
-        return Response(pdf, mimetype='application/pdf', headers={"Content-Disposition": "attachment; filename=snort_report.pdf"})
+        return Response(pdf, mimetype='application/pdf', headers={"Content-Disposition": f"attachment; filename={filename}"})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 if __name__ == '__main__':
+    # initialize chatbot 
+    try:
+        init_chatbot(app)
+    except Exception as e:
+        logging.error(f"Chatbot initialization failed: {e}")
+
+    # start background log collector thread (daemon)
     log_collector_thread = threading.Thread(target=collect_logs, daemon=True)
     log_collector_thread.start()
+
+    # run flask app
     app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
