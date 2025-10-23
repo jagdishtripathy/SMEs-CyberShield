@@ -6,7 +6,7 @@
  * - Displaying real-time logs via Server-Sent Events with theme styling.
  * - Tab navigation between content sections.
  * - User logout.
- * - Snort Alerts (Enhanced Display)
+ * - Suricata Alerts (Real-time IDS/IPS)
  * - System Health
  * - Log Refresh
  * - Report Generation Triggers
@@ -320,32 +320,134 @@ function initializeRealtimeLogs() {
         return;
     }
     console.log("Initializing real-time log viewer...");
-    let eventSource = null, retryTimeout = null;
+    let eventSource = null, retryTimeout = null, retryCount = 0;
     function connectSSE() {
         if (retryTimeout) clearTimeout(retryTimeout);
         if (eventSource && eventSource.readyState !== EventSource.CLOSED) eventSource.close();
         eventSource = new EventSource('/stream-realtime-logs');
-        logStatusElement.textContent = 'Connecting...';
-        eventSource.onopen = () => { logStatusElement.textContent = 'Connected'; console.log("SSE opened."); };
-        eventSource.onmessage = ev => { logStatusElement.textContent = 'Connected'; appendLogLine(ev.data, logOutputElement); if (logOutputElement.scrollHeight-logOutputElement.clientHeight<=logOutputElement.scrollTop+50) logOutputElement.scrollTop=logOutputElement.scrollHeight; }; // Auto-scroll if near bottom
-        eventSource.onerror = err => { logStatusElement.textContent = 'Connection error. Retrying...'; console.error("SSE failed:", err); eventSource.close(); retryTimeout = setTimeout(connectSSE, 5000); }; // Retry after 5s
+        logStatusElement.textContent = '⏳ Connecting...';
+        eventSource.onopen = () => { 
+            logStatusElement.textContent = '✅ Live (connected)'; 
+            retryCount = 0; // Reset retry count on success
+            console.log("SSE opened."); 
+        };
+        eventSource.onmessage = ev => { 
+            try {
+                const logData = JSON.parse(ev.data);
+                logStatusElement.textContent = '✅ Live (connected)';
+                if (!logData.error) {
+                    appendLogLine(logData.message || ev.data, logOutputElement);
+                    if (logOutputElement.scrollHeight-logOutputElement.clientHeight<=logOutputElement.scrollTop+50) {
+                        logOutputElement.scrollTop=logOutputElement.scrollHeight; // Auto-scroll if near bottom
+                    }
+                } else {
+                    console.warn("Log message contains error:", logData.error);
+                }
+            } catch (e) {
+                console.warn("Error parsing log message:", ev.data, e);
+                appendLogLine(ev.data, logOutputElement);
+            }
+        };
+        eventSource.onerror = err => { 
+            retryCount++;
+            console.error("SSE error (retry #" + retryCount + "):", err);
+            if (retryCount >= 5) {
+                logStatusElement.textContent = '❌ Live connection failed. Showing recent logs.';
+                eventSource.close();
+                // Try to show at least recent logs
+                refreshLogs();
+            } else {
+                logStatusElement.textContent = `⚠️ Reconnecting... (attempt ${retryCount})`;
+                eventSource.close(); 
+                retryTimeout = setTimeout(connectSSE, 5000); // Retry after 5s
+            }
+        };
     }
     connectSSE();
     // Clean up on page leave
     window.addEventListener('beforeunload', () => { if(retryTimeout)clearTimeout(retryTimeout); if(eventSource&&eventSource.readyState!==EventSource.CLOSED){eventSource.close();console.log("SSE closed on unload.");} });
 }
 
-// --- Function to fetch Snort Alerts ---
-async function fetchSnortAlerts() {
-    const listEl = document.getElementById('snort-alerts-list'), statusEl = document.getElementById('snort-status');
+// --- Function to fetch Suricata Alerts (THREATS ONLY) ---
+async function fetchSuricataAlerts() {
+    const listEl = document.getElementById('suricata-alerts-list'), statusEl = document.getElementById('suricata-status');
     if (!listEl || !statusEl) return;
-    statusEl.textContent = 'Loading alerts...'; listEl.innerHTML = '';
+    statusEl.textContent = 'Loading threat detections...'; listEl.innerHTML = '';
     try {
-        const response = await fetch('/snort-alerts'); if (!response.ok) throw new Error(`HTTP ${response.status}`); const alerts = await response.json();
+        const response = await fetch('/suricata-alerts'); 
+        if (!response.ok) throw new Error(`HTTP ${response.status}`); 
+        const alerts = await response.json();
+        
         if (alerts && alerts.length > 0) {
-             alerts.forEach(alert => { try { const li=document.createElement('li'); li.classList.add('snort-alert-item'); let msg=alert.message||'', ts=alert.timestamp?new Date(alert.timestamp).toLocaleString():'', pri=3, cls='N/A', pro='N/A', sip='N/A', dip='N/A', txt=msg; if(!ts){const tsm=msg.match(/^(\d{2}\/\d{2}-\d{2}:\d{2}:\d{2}\.\d+)\s+/); if(tsm){ts=tsm[1];msg=msg.substring(tsm[0].length);}} const pm=msg.match(/\[\s*Priority\s*:\s*(\d+)\s*\]/i); if(pm)pri=parseInt(pm[1],10); li.classList.add(`priority-${pri}`); const clm=msg.match(/\[\s*Classification\s*:\s*([^\]]+)\s*\]/i); if(clm)cls=clm[1].trim(); const prm=msg.match(/\{\s*(\w+)\s*\}/i); if(prm)pro=prm[1]; const ipm=msg.match(/(\d{1,3}(\.\d{1,3}){3}(?::\d+)?)\s*->\s*(\d{1,3}(\.\d{1,3}){3}(?::\d+)?)/); if(ipm){sip=ipm[1];dip=ipm[2];} let tmp=msg; if(pm)tmp=tmp.replace(pm[0],''); if(clm)tmp=tmp.replace(clm[0],''); if(prm)tmp=tmp.replace(prm[0],''); if(ipm)tmp=tmp.replace(ipm[0],''); const txtm=tmp.match(/\[\s*\*\*\s*\]\s*\[\s*\d+:\d+:\d+\s*\]\s*([^\[\{]+)/); if(txtm)txt=txtm[1].trim(); else txt=msg.split('[ Class')[0].split('[ Prio')[0].split('{')[0].trim(); li.innerHTML=`<div class="alert-header"><span class="alert-timestamp">${ts||'No Timestamp'}</span> <span class="alert-priority priority-${pri}">P${pri}</span></div><div class="alert-message">${txt||'No Message Text'}</div><div class="alert-details">${cls!=='N/A'?`<span class="alert-classification">Cls: ${cls}</span>`:''} ${pro!=='N/A'?`<span class="alert-protocol">Pro: ${pro}</span>`:''}</div> ${sip!=='N/A'?`<div class="alert-network"><span class="alert-ip source">${sip}</span> <span class="alert-arrow">➔</span> <span class="alert-ip dest">${dip}</span></div>`:''}`; listEl.appendChild(li); } catch(pE){ console.error("Snort parse error:",alert,pE); const eli=document.createElement('li'); eli.classList.add('snort-alert-item','error-message'); eli.textContent=`Error displaying alert: ${alert?.message?.substring(0,100)||'Unknown format'}`; listEl.appendChild(eli); } }); statusEl.textContent = ''; // Clear status if successful
-        } else { statusEl.textContent = 'No alerts found.'; }
-    } catch (error) { console.error('Fetch Snort failed:',error); statusEl.textContent='Failed to load alerts.'; listEl.innerHTML='<li class="snort-alert-item error-message">Failed to load alerts. Check console.</li>'; }
+            alerts.forEach(alert => { 
+                try { 
+                    const li = document.createElement('li'); 
+                    li.classList.add('suricata-alert-item');
+                    
+                    // Extract threat data with fallbacks
+                    const timestamp = alert.timestamp ? new Date(alert.timestamp).toLocaleString() : 'N/A';
+                    const severityLabel = alert.severity_label || `Severity ${alert.severity}`;
+                    const srcIp = alert.src_ip || 'N/A';
+                    const srcPort = alert.src_port ? (alert.src_port !== 'N/A' ? `:${alert.src_port}` : '') : '';
+                    const destIp = alert.dest_ip || 'N/A';
+                    const destPort = alert.dest_port ? (alert.dest_port !== 'N/A' ? `:${alert.dest_port}` : '') : '';
+                    const proto = alert.proto || 'N/A';
+                    const message = alert.message || 'Unknown Threat';
+                    const category = alert.category || 'Unknown';
+                    const signatureId = alert.signature_id || '';
+                    const action = alert.action || 'Detected';
+                    
+                    // Determine severity CSS class from severity number
+                    let severityClass = 'info';
+                    if (alert.severity === 1) severityClass = 'critical';
+                    else if (alert.severity === 2) severityClass = 'major';
+                    else if (alert.severity === 3) severityClass = 'minor';
+                    
+                    const srcAddr = `${srcIp}${srcPort}`;
+                    const destAddr = `${destIp}${destPort}`;
+                    
+                    li.classList.add(`severity-${severityClass}`);
+                    li.innerHTML = `
+                        <div class="alert-header">
+                            <span class="alert-timestamp">🕐 ${timestamp}</span>
+                            <span class="alert-severity severity-${severityClass}">${severityLabel}</span>
+                            <span class="alert-action">[${action}]</span>
+                        </div>
+                        <div class="alert-message"><strong>🎯 ${message}</strong></div>
+                        <div class="alert-details">
+                            <span class="alert-category">📂 ${category}</span>
+                            <span class="alert-protocol">🔹 ${proto}</span>
+                            ${signatureId ? `<span class="alert-sig-id">SID: ${signatureId}</span>` : ''}
+                        </div>
+                        <div class="alert-network">
+                            <span class="alert-ip source">📤 ${srcAddr}</span>
+                            <span class="alert-arrow">→</span>
+                            <span class="alert-ip dest">📥 ${destAddr}</span>
+                        </div>
+                    `;
+                    listEl.appendChild(li); 
+                } catch(pE){ 
+                    console.error("Threat parse error:", alert, pE); 
+                    const eli = document.createElement('li'); 
+                    eli.classList.add('suricata-alert-item', 'error-message'); 
+                    eli.textContent = `⚠️ Error displaying threat: ${alert?.message?.substring(0,80) || 'Unknown format'}`; 
+                    listEl.appendChild(eli); 
+                } 
+            }); 
+            statusEl.textContent = `🚨 ${alerts.length} threats detected`;
+        } else { 
+            statusEl.textContent = '✅ No threats detected'; 
+        }
+    } catch (error) { 
+        console.error('Fetch threat alerts failed:', error); 
+        statusEl.textContent = 'Failed to load threat detections'; 
+        listEl.innerHTML = '<li class="suricata-alert-item error-message">❌ Error loading threats. Check console.</li>'; 
+    }
+}
+
+// Backward compatibility: keep fetchSnortAlerts as alias
+async function fetchSnortAlerts() {
+    return fetchSuricataAlerts();
 }
 
 // --- Function to fetch System Health ---
@@ -363,9 +465,9 @@ async function fetchSystemHealth() {
 function initializeTabs() {
     const navLinks=document.querySelectorAll('nav a.nav-link'), contentSections=document.querySelectorAll('.content-section');
     if (navLinks.length===0||contentSections.length===0) return;
-    navLinks.forEach(link => { link.addEventListener('click', function(e){ e.preventDefault(); if(this.classList.contains('active')) return; const targetId=this.getAttribute('data-target'), targetSection=document.getElementById(targetId); navLinks.forEach(n=>n.classList.remove('active')); contentSections.forEach(s=>s.classList.remove('active')); this.classList.add('active'); if(targetSection){ targetSection.classList.add('active'); console.log(`Tab switched to: ${targetId}`); if(targetId==='dashboard-content'){ if(Object.keys(Chart.instances).length>0) Object.values(Chart.instances).forEach(i=>{try{i.resize();}catch(e){}}); else createCharts(); } else if(targetId==='environment-content'){ fetchSnortAlerts(); fetchSystemHealth(); } else if (targetId === 'analysis-content') { /* Maybe re-focus log window? */ } } else console.warn(`Target section missing: ${targetId}`); }); });
+    navLinks.forEach(link => { link.addEventListener('click', function(e){ e.preventDefault(); if(this.classList.contains('active')) return; const targetId=this.getAttribute('data-target'), targetSection=document.getElementById(targetId); navLinks.forEach(n=>n.classList.remove('active')); contentSections.forEach(s=>s.classList.remove('active')); this.classList.add('active'); if(targetSection){ targetSection.classList.add('active'); console.log(`Tab switched to: ${targetId}`); if(targetId==='dashboard-content'){ if(Object.keys(Chart.instances).length>0) Object.values(Chart.instances).forEach(i=>{try{i.resize();}catch(e){}}); else createCharts(); } else if(targetId==='environment-content'){ fetchSuricataAlerts(); fetchSystemHealth(); } else if (targetId === 'analysis-content') { /* Maybe re-focus log window? */ } } else console.warn(`Target section missing: ${targetId}`); }); });
     // Ensure initial active tab is set correctly
-    let activeFound=false, initialTargetId='dashboard-content'; navLinks.forEach(l=>{if(l.classList.contains('active')){if(activeFound)l.classList.remove('active'); else{activeFound=true; initialTargetId=l.getAttribute('data-target');}}}); if(!activeFound)document.getElementById('nav-dashboard')?.classList.add('active'); contentSections.forEach(s=>s.classList.remove('active')); const initialSection=document.getElementById(initialTargetId); if(initialSection){ initialSection.classList.add('active'); console.log(`Initial tab set to: ${initialTargetId}`); if(initialTargetId==='dashboard-content')createCharts(); else if(initialTargetId==='environment-content'){fetchSnortAlerts();fetchSystemHealth();} } else { console.warn("Initial target section not found, defaulting to dashboard."); document.getElementById('dashboard-content')?.classList.add('active'); createCharts(); } console.log("Tabs initialized.");
+    let activeFound=false, initialTargetId='dashboard-content'; navLinks.forEach(l=>{if(l.classList.contains('active')){if(activeFound)l.classList.remove('active'); else{activeFound=true; initialTargetId=l.getAttribute('data-target');}}}); if(!activeFound)document.getElementById('nav-dashboard')?.classList.add('active'); contentSections.forEach(s=>s.classList.remove('active')); const initialSection=document.getElementById(initialTargetId); if(initialSection){ initialSection.classList.add('active'); console.log(`Initial tab set to: ${initialTargetId}`); if(initialTargetId==='dashboard-content')createCharts(); else if(initialTargetId==='environment-content'){fetchSuricataAlerts();fetchSystemHealth();} } else { console.warn("Initial target section not found, defaulting to dashboard."); document.getElementById('dashboard-content')?.classList.add('active'); createCharts(); } console.log("Tabs initialized.");
 }
 
 // --- Function to handle logout ---
@@ -378,12 +480,30 @@ async function handleLogout() {
 // --- Function to refresh logs ---
 async function refreshLogs() {
     const logOut=document.getElementById('realtime-log-output'), logStat=document.getElementById('log-status'); if(!logOut||!logStat) return;
-    logStat.textContent='Refreshing...'; logOut.innerHTML='<span class="log-status" style="color:var(--text-secondary);padding:20px;">Loading historical logs...</span>'; // Indicate loading
-    try { const r=await fetch('/refresh-logs'); // Assuming this endpoint gets recent historical logs
-         if(!r.ok)throw new Error(`HTTP ${r.status}`); const logs=await r.json(); logOut.innerHTML=''; // Clear loading message
-        if(logs&&Array.isArray(logs)){ if(logs.length===0)logStat.textContent='No historical logs found.'; else {logs.forEach(l=>{appendLogLine(l.message||l,logOut);}); logStat.textContent=`Refreshed (${logs.length} lines shown). Real-time stream active.`; logOut.scrollTop=logOut.scrollHeight;} }
-        else logStat.textContent='Invalid data received from refresh.';
-    } catch(e){ console.error('Log refresh failed:',e); logOut.innerHTML=`<span class="log-line error">Failed to refresh logs: ${e.message}</span>`; logStat.textContent='Refresh failed.'; }
+    logStat.textContent='🔄 Refreshing logs...'; logOut.innerHTML='<span class="log-status" style="color:var(--text-secondary);padding:20px;">Loading recent logs...</span>'; // Indicate loading
+    try { const r=await fetch('/refresh-logs'); // Fetch recent historical logs
+        const data=await r.json();
+        if(r.ok){ // Check if response is OK
+            const logs=data.logs||data; // Handle both formats
+            logOut.innerHTML=''; // Clear loading message
+            if(logs&&Array.isArray(logs)){ 
+                if(logs.length===0) {
+                    logStat.textContent='✅ No new logs found.'; 
+                } else {
+                    logs.forEach(l=>{appendLogLine(l.message||l,logOut);});
+                    const source=logs[0]?.source==='elasticsearch' ? '(Elasticsearch)' : '(File-based)';
+                    logStat.textContent=`✅ Refreshed ${logs.length} logs ${source}. Real-time stream active.`; 
+                    logOut.scrollTop=logOut.scrollHeight;
+                }
+            } else {
+                logStat.textContent='⚠️ Invalid log data format.';
+            }
+        } else { // Handle error response
+            const errorMsg=data.error||'Unknown error';
+            logStat.textContent=`⚠️ Error: ${errorMsg}`;
+            logOut.innerHTML=`<span class="log-line error">❌ ${errorMsg}</span>`;
+        }
+    } catch(e){ console.error('Log refresh failed:',e); logOut.innerHTML=`<span class="log-line error">❌ Refresh failed: ${e.message}</span>`; logStat.textContent='❌ Refresh error. Check console.'; }
 }
 
 // --- Report Generation Functions ---
@@ -416,32 +536,198 @@ function setReportButtonsDisabled(disabled) {
      document.getElementById('generatePdfReportBtn')?.toggleAttribute('disabled', disabled);
 }
 
-async function generateSnortHtmlReport() {
-    setReportStatus('Generating HTML report...', 'loading'); // Use loading type
+async function generateSuricataHtmlReport() {
+    setReportStatus('Generating Suricata HTML report...', 'loading');
     setReportButtonsDisabled(true);
     const filters = getReportFilters();
-    const reportUrl = `/generate-report/snort/html?${filters.toString()}`; // ** ADJUST URL IF NEEDED **
+    const reportUrl = `/generate-report/suricata/html?${filters.toString()}`;
     try {
         const response = await fetch(reportUrl);
         if (!response.ok) { const errD=await response.json().catch(()=>({error:`HTTP ${response.status}`})); throw new Error(errD.error||response.statusText); }
-        const htmlContent = await response.text(); // Assuming backend sends HTML text
-        setReportStatus('HTML report generated successfully. Opening in new tab...', 'success');
+        const htmlContent = await response.text();
+        setReportStatus('Suricata HTML report generated! Opening in new tab...', 'success');
         const reportWindow = window.open("", "_blank");
         if(reportWindow) { reportWindow.document.write(htmlContent); reportWindow.document.close(); }
-        else { setReportStatus('Could not open new tab. Please check your popup blocker settings.', 'error'); } // More specific error
-    } catch (error) { console.error('HTML Report generation failed:', error); setReportStatus(`HTML Report Error: ${error.message}`, 'error');
+        else { setReportStatus('Could not open new tab. Check your popup blocker.', 'error'); }
+    } catch (error) { console.error('Suricata HTML Report generation failed:', error); setReportStatus(`❌ Error: ${error.message}`, 'error');
     } finally { setReportButtonsDisabled(false); }
 }
 
-function generateSnortPdfReport() {
-    setReportStatus('Initiating PDF report generation... Your download should start automatically.', 'loading'); // Use loading type
+// =====================================================================
+// REAL-TIME ALERT SYSTEM FUNCTIONS
+// =====================================================================
+
+/**
+ * Switch between alert tabs (Recent Alerts vs Preferences)
+ */
+function switchAlertsTab(tabName) {
+    // Only 'recent' tab exists after simplification
+    document.querySelectorAll('.alerts-tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.alerts-tab-btn').forEach(btn => btn.classList.remove('active'));
+    const tabElement = document.getElementById('recent-alerts-tab');
+    if (tabElement) tabElement.classList.add('active');
+    const btn = document.querySelector(`[onclick="switchAlertsTab('recent')"]`);
+    if (btn) btn.classList.add('active');
+}
+
+/**
+ * Switch between configuration tabs
+ */
+function switchConfigTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.config-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.config-tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Show selected tab
+    const tabElement = document.getElementById(tabName + '-tab');
+    if (tabElement) {
+        tabElement.classList.add('active');
+        document.querySelector(`[onclick="switchConfigTab('${tabName}')"]`).classList.add('active');
+    }
+}
+
+/**
+ * Fetch recent alerts from API
+ */
+async function fetchAlerts(limit = 20) {
+    try {
+        const response = await fetch(`/api/alerts/recent?limit=${limit}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const alerts = await response.json();
+        
+        // Display alerts
+        displayAlerts(alerts);
+        
+        // Update statistics
+        updateAlertStatistics(alerts);
+        
+        return alerts;
+    } catch (error) {
+        console.error('Error fetching alerts:', error);
+        const tbody = document.getElementById('alerts-tbody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #f87171;">Error loading alerts: ${error.message}</td></tr>`;
+        }
+    }
+}
+
+/**
+ * Display alerts in table
+ */
+function displayAlerts(alerts) {
+    const tbody = document.getElementById('alerts-tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (alerts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">No alerts found</td></tr>';
+        return;
+    }
+    
+    alerts.forEach(alert => {
+        const severityClass = 
+            alert.severity === 'Critical' ? 'severity-critical' :
+            alert.severity === 'High' ? 'severity-high' :
+            alert.severity === 'Medium' ? 'severity-medium' :
+            'severity-low';
+        
+        const statusBadge = alert.acknowledged ? 
+            '<span class="badge badge-success">✓ Acknowledged</span>' :
+            '<span class="badge badge-warning">⚠ Pending</span>';
+        
+        const timestamp = new Date(alert.created_at).toLocaleString();
+        const actionBtn = !alert.acknowledged ? 
+            `<button onclick="acknowledgeAlert(${alert.id})" class="btn btn-sm btn-primary">Acknowledge</button>` : 
+            '<span style="color: #999;">Done</span>';
+        
+        const row = `
+            <tr>
+                <td>${timestamp}</td>
+                <td><span class="severity-badge ${severityClass}">${alert.severity}</span></td>
+                <td>${alert.alert_type}</td>
+                <td><code>${alert.source_ip}</code></td>
+                <td><code>${alert.dest_ip}</code></td>
+                <td>${alert.message}</td>
+                <td>${statusBadge}</td>
+                <td>${actionBtn}</td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+}
+
+/**
+ * Update alert statistics
+ */
+function updateAlertStatistics(alerts) {
+    if (!Array.isArray(alerts)) return;
+    
+    const stats = {
+        total: alerts.length,
+        unacknowledged: alerts.filter(a => !a.acknowledged).length,
+        critical: alerts.filter(a => a.severity === 'Critical').length,
+        high: alerts.filter(a => a.severity === 'High').length
+    };
+    
+    // Update UI
+    const totalEl = document.getElementById('total-alerts-count');
+    const unackEl = document.getElementById('unacknowledged-alerts-count');
+    const criticalEl = document.getElementById('critical-alerts-count');
+    const highEl = document.getElementById('high-alerts-count');
+    
+    if (totalEl) totalEl.textContent = stats.total;
+    if (unackEl) unackEl.textContent = stats.unacknowledged;
+    if (criticalEl) criticalEl.textContent = stats.critical;
+    if (highEl) highEl.textContent = stats.high;
+}
+
+/**
+ * Acknowledge an alert
+ */
+async function acknowledgeAlert(alertId) {
+    try {
+        const response = await fetch(`/api/alerts/${alertId}/acknowledge`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        // Refresh alerts
+        await fetchAlerts();
+        console.log(`✓ Alert ${alertId} acknowledged`);
+    } catch (error) {
+        console.error('Error acknowledging alert:', error);
+        alert(`Failed to acknowledge alert: ${error.message}`);
+    }
+}
+
+/**
+ * Refresh alerts manually
+ */
+async function refreshAlerts() {
+    console.log('Refreshing alerts...');
+    await fetchAlerts(20);
+}
+
+// Preferences and external channel test functions removed: SIEM-only alerts within dashboard
+
+function generateSuricataPdfReport() {
+    setReportStatus('Generating Suricata PDF report...', 'loading');
     setReportButtonsDisabled(true);
     const filters = getReportFilters();
-    const reportUrl = `/generate-report/snort/pdf?${filters.toString()}`; // ** ADJUST URL IF NEEDED **
-
-    // Use a hidden iframe or direct window location to trigger download
-    // Using window.location.href is simpler for direct downloads triggered by server headers
+    const reportUrl = `/generate-report/suricata/pdf?${filters.toString()}`;
     window.location.href = reportUrl;
+    setTimeout(() => { setReportButtonsDisabled(false); }, 3000);
+}
+
+// Backward compatibility: keep Snort function names as aliases
+async function generateSnortHtmlReport() {
+    return generateSuricataHtmlReport();
+}
+
+function generateSnortPdfReport() {
+    return generateSuricataPdfReport();
 
     // Provide feedback, but acknowledge download start might take time or fail silently client-side
     setTimeout(() => {
@@ -491,6 +777,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const btnRefresh = document.getElementById('refresh-logs-button'); if(btnRefresh)btnRefresh.addEventListener('click', refreshLogs); else console.warn("Refresh logs button ('refresh-logs-button') not found.");
         const btnHtmlRpt = document.getElementById('generateHtmlReportBtn'); if(btnHtmlRpt)btnHtmlRpt.addEventListener('click', generateSnortHtmlReport); else console.warn("HTML Report button ('generateHtmlReportBtn') not found.");
         const btnPdfRpt = document.getElementById('generatePdfReportBtn'); if(btnPdfRpt)btnPdfRpt.addEventListener('click', generateSnortPdfReport); else console.warn("PDF Report button ('generatePdfReportBtn') not found.");
+
+        // Initialize Alert System (SIEM-only: dashboard + DB)
+        console.log("Initializing alert system...");
+        fetchAlerts(20);  // Load recent alerts
+        // Auto-refresh alerts every 30 seconds
+        setInterval(() => {
+            console.log("Auto-refreshing alerts...");
+            fetchAlerts(20);
+        }, 30000);
 
         // --- Test for IP Block Popup ---
         // Uncomment the line below to test the popup 5 seconds after the page loads

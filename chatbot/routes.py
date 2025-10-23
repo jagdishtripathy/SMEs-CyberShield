@@ -17,29 +17,20 @@ chatbot = GeminiChatbot(api_key=GEMINI_API_KEY)
 
 @chatbot_bp.route('/chat', methods=['POST'])
 def chat():
-    """
-    Endpoint to handle chat messages and return responses from the Gemini API.
-    """
-    # Check if user is logged in
-    if 'logged_in' not in session or not session['logged_in']:
-        logger.warning("Unauthorized attempt to access chatbot.")
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    # Get message from request
     data = request.get_json()
     if not data or 'message' not in data:
         return jsonify({"error": "No message provided"}), 400
-    
+
     user_message = data['message']
     logger.info(f"Received chatbot message: {user_message[:50]}...")
-    
-    # Get response from Gemini
+
     try:
         response = chatbot.send_message(user_message)
         return jsonify({"response": response})
     except Exception as e:
         logger.error(f"Error getting chatbot response: {str(e)}")
         return jsonify({"error": f"Failed to get response: {str(e)}"}), 500
+
 
 @chatbot_bp.route('/reset', methods=['POST'])
 def reset_chat():

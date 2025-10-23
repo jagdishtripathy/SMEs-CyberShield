@@ -4,25 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>INTRUSENSE SIEM Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/chatbot/static/chatbot.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 </head>
 <body>
     <nav role="navigation">
-        <div class="logo">INTRUSENSE</div>
+        <div class="logo">CyberShield</div>
         <a href="#" id="nav-dashboard" class="nav-link active" data-target="dashboard-content"><i class="icon icon-dashboard"></i> Dashboard</a>
         <a href="#" id="nav-analysis" class="nav-link" data-target="analysis-content"><i class="icon icon-analysis"></i> Analysis</a>
         <a href="#" id="nav-environment" class="nav-link" data-target="environment-content"><i class="icon icon-threat"></i> Threat Detection</a>
         <a href="#" id="nav-reports" class="nav-link" data-target="reports-content"><i class="icon icon-reports"></i> Reports</a>
+        <a href="#" id="nav-alerts" class="nav-link" data-target="alerts-content"><i class="icon icon-alert"></i> Alerts</a>
         <a href="#" id="nav-configuration" class="nav-link" data-target="configuration-content"><i class="icon icon-config"></i> Configuration</a>
         <div class="user-info">
-            <span>Welcome Admin</span> |
+            <span><b>Welcome Admin</b></span> |
             <a href="#">Data Report</a> |
             <a href="#">Settings</a> |
             <a href="#">Support</a> |
             <a href="#" id="logout-link"><i class="icon icon-logout"></i> Logout</a>
+        </div>
+        <div class="theme-toggle">
+            <input type="checkbox" id="theme-switch">
+            <label for="theme-switch" class="theme-label">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </label>
         </div>
     </nav>
 
@@ -132,16 +140,16 @@
 
         <section id="environment-content" class="content-section" aria-labelledby="environment-title">
              <h2 id="environment-title">Threat Detection</h2>
-             <p>This section displays threat detection information and Snort alerts.</p>
+             <p>This section displays real-time intrusion detection data from Suricata IDS/IPS.</p>
 
              <div class="threat-detection-grid">
                  <div class="panel">
                      <header class="panel-header">
-                         <h3><i class="icon icon-snort"></i> Snort Alerts</h3>
+                         <h3><i class="icon icon-alert"></i> 🚨 Suricata Alerts</h3>
                      </header>
-                     <div id="snort-alerts-container" class="panel-content">
-                         <p id="snort-status" role="status">Loading Snort alerts...</p>
-                         <ul id="snort-alerts-list" aria-live="polite"></ul>
+                     <div id="suricata-alerts-container" class="panel-content">
+                         <p id="suricata-status" role="status">Loading Suricata alerts...</p>
+                         <ul id="suricata-alerts-list" aria-live="polite"></ul>
                      </div>
                  </div>
                  <div class="panel">
@@ -159,10 +167,10 @@
 
         <section id="reports-content" class="content-section" aria-labelledby="reports-title">
              <h2 id="reports-title">Reports</h2>
-             <p>Generate reports based on collected data.</p>
+             <p>Generate detailed reports from Suricata alerts and system data.</p>
 
              <div class="report-generator panel"> <header class="panel-header">
-                     <h3>Snort Alert Report Generator</h3>
+                     <h3>🚨 Suricata Alert Report Generator</h3>
                  </header>
                  <div class="panel-content">
                      <form id="report-filters">
@@ -197,9 +205,110 @@
              </div>
         </section>
 
+        <section id="alerts-content" class="content-section" aria-labelledby="alerts-title">
+            <h2 id="alerts-title">🚨 Real-Time Alerts & Notifications</h2>
+            
+            <!-- Alert Statistics -->
+            <div class="alerts-stats">
+                <div class="stat-card">
+                    <i class="icon icon-alert"></i>
+                    <h4>Total Alerts</h4>
+                    <span id="total-alerts-count" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <i class="icon icon-warning"></i>
+                    <h4>Unacknowledged</h4>
+                    <span id="unacknowledged-alerts-count" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <i class="icon icon-critical"></i>
+                    <h4>Critical Alerts</h4>
+                    <span id="critical-alerts-count" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <i class="icon icon-high"></i>
+                    <h4>High Priority</h4>
+                    <span id="high-alerts-count" class="stat-number">0</span>
+                </div>
+            </div>
+
+            <!-- Tabs for Alerts -->
+            <div class="alerts-tabs">
+                <button class="alerts-tab-btn active" onclick="switchAlertsTab('recent')">Recent Alerts</button>
+            </div>
+
+            <!-- Recent Alerts Tab -->
+            <div id="recent-alerts-tab" class="alerts-tab-content active">
+                <div class="panel">
+                    <h3>Recent Security Alerts</h3>
+                    <button onclick="refreshAlerts()" class="btn btn-sm btn-secondary" style="margin-bottom: 10px;">🔄 Refresh</button>
+                    <div class="table-wrapper">
+                        <table id="alerts-table" class="alerts-data-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Severity</th>
+                                    <th>Type</th>
+                                    <th>Source IP</th>
+                                    <th>Dest IP</th>
+                                    <th>Message</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alerts-tbody">
+                                <tr><td colspan="8" style="text-align: center; color: #999;">Loading alerts...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferences Tab removed: SIEM-only alerts are visible in-dashboard; no external channels. -->
+        </section>
+
         <section id="configuration-content" class="content-section" aria-labelledby="configuration-title">
-             <h2 id="configuration-title">Configuration</h2>
-             <p>Configuration settings will go here.</p>
+             <h2 id="configuration-title">⚙️ Configuration</h2>
+             
+             <!-- Configuration Tabs -->
+             <div class="config-tabs">
+                <button class="config-tab-btn active" onclick="switchConfigTab('system-health')">System Health</button>
+                <button class="config-tab-btn" onclick="switchConfigTab('suricata')">Suricata Settings</button>
+                <button class="config-tab-btn" onclick="switchConfigTab('elasticsearch')">Elasticsearch</button>
+                <button class="config-tab-btn" onclick="switchConfigTab('logging')">Logging</button>
+             </div>
+
+             <!-- System Health Tab -->
+             <div id="system-health-tab" class="config-content active">
+                <div class="panel">
+                    <h3>💻 System Health Monitor</h3>
+                    <p>System health monitoring will be displayed here.</p>
+                </div>
+             </div>
+
+             <!-- Suricata Settings Tab -->
+             <div id="suricata-tab" class="config-content">
+                <div class="panel">
+                    <h3>🚨 Suricata IDS/IPS Configuration</h3>
+                    <p>Suricata configuration options will be displayed here.</p>
+                </div>
+             </div>
+
+             <!-- Elasticsearch Tab -->
+             <div id="elasticsearch-tab" class="config-content">
+                <div class="panel">
+                    <h3>🔍 Elasticsearch Configuration</h3>
+                    <p>Elasticsearch settings will be displayed here.</p>
+                </div>
+             </div>
+
+             <!-- Logging Tab -->
+             <div id="logging-tab" class="config-content">
+                <div class="panel">
+                    <h3>📝 Logging Configuration</h3>
+                    <p>Logging settings will be displayed here.</p>
+                </div>
+             </div>
         </section>
 
     </main>
@@ -207,13 +316,13 @@
     <div id="ipBlockedPopup" class="popup-modal" role="dialog" aria-modal="true" aria-labelledby="popupTitle" style="display: none;">
         <div class="popup-content">
             <span class="close-button" onclick="hideIpBlockedPopup()" title="Close" aria-label="Close">&times;</span>
-            <h3 id="popupTitle"><i class="icon icon-threat"></i> IP Address Blocked</h3>
-            <p>The following IP address has been blocked by the Snort IPS:</p>
+            <h3 id="popupTitle"><i class="icon icon-threat"></i>IP Address Blocked by Suricata</h3>
+            <p>The following IP address has been detected and blocked by the Suricata IPS:</p>
             <p><strong id="blockedIpAddress"></strong></p>
             <button onclick="hideIpBlockedPopup()">OK</button>
         </div>
     </div>
-    <script src="script.js"></script>
+    <script src="/static/script.js"></script>
     <script src="/chatbot/static/chatbot.js"></script>
 </body>
 </html>

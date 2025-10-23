@@ -1,6 +1,10 @@
 import google.generativeai as genai
 import os
 from typing import List, Dict, Any
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class GeminiChatbot:
     """
@@ -14,8 +18,14 @@ class GeminiChatbot:
         Args:
             api_key: Optional API key, will use environment variable if not provided
         """
-        # Use provided API key or default to environment variable
-        self.api_key = api_key or "AIzaSyAVM5fW5br_RIDNhmUJ1F5XaFiemVe9QuI"
+        # Use provided API key, or get from environment variable, or raise error
+        if api_key:
+            self.api_key = api_key
+        else:
+            self.api_key = os.getenv('GEMINI_API_KEY')
+            if not self.api_key:
+                raise ValueError("GEMINI_API_KEY not found in environment variables. Please set it in your .env file.")
+        
         genai.configure(api_key=self.api_key)
         
         # Configure the model
@@ -47,7 +57,7 @@ class GeminiChatbot:
         Returns the system prompt that instructs the model to focus on cybersecurity assistance.
         """
         return """
-        You are a cybersecurity assistant for a SIEM (Security Information and Event Management) system.
+        You are a cybersecurity assistant for a SIEM (Security Information and Event Management) system and your name is CyberShield.
         Your primary role is to help security analysts and IT staff with cybersecurity-related questions and issues.
         
         You can:
