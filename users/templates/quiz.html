@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>Cybersecurity Quizzes & Learning Path</h2>
+            <p class="text-muted">Test your knowledge and earn points! Get personalized video recommendations after each quiz.</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <h3>Available Quizzes</h3>
+            <p class="text-muted">Take quizzes to improve your knowledge and earn points</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% for quiz in quizzes %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ quiz.title }}</h5>
+                    <p class="card-text">Category: {{ quiz.category }}</p>
+                    <p class="card-text">Questions: {{ quiz.questions|length }}</p>
+                    <button class="btn btn-primary start-quiz-btn" data-quiz-id="{{ quiz.id }}">
+                        <i class="fas fa-play"></i> Start Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Quiz Modal -->
+<div class="modal fade" id="quizModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quiz</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="quizContent">
+                <!-- Quiz content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+<!-- Results Modal -->
+<div class="modal fade" id="resultsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quiz Results</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="resultsContent">
+                <!-- Results will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Quiz page loaded');
+    
+    // Add click event listeners to all start buttons
+    const startButtons = document.querySelectorAll('.start-quiz-btn');
+    console.log('Found start buttons:', startButtons.length);
+    
+    startButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const quizId = parseInt(this.getAttribute('data-quiz-id'), 10);
+            console.log('Starting quiz:', quizId);
+            loadQuizData(quizId);
+        });
+    });
+});
+
+function loadQuizData(quizId) {
+    console.log('Fetching quiz with ID:', quizId);
+    fetch('/users/get_quiz/' + quizId)
+        .then(response => {
+            console.log('Response received:', response);
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(quiz => {
+            console.log('Quiz JSON:', quiz);
+            showQuizModal(quiz);
+        })
+        .catch(error => {
+            console.error('Error loading quiz:', error);
+            alert('Failed to load quiz. Check console for details.');
+        });
+}
+
+
+function showQuizModal(quiz) {
+    console.log('Showing quiz:', quiz);
+    
+    let quizHTML = `
+        <h4>${quiz.title}</h4>
+        <p class="text-muted">${quiz.category}</p>
+        <div class="progress mb-4">
+            <div class="progress-bar" role="progressbar" style="width: 100%">Complete all questions</div>
+        </div>
+        <form id="quizForm">
+    `;
+    
+    quiz.questions.forEach((question, index) => {
+        quizHTML += `
+            <div class="question-container mb-4 p-3 border rounded">
+                <h6>Question ${index + 1} of ${quiz.questions.length}</h6>
+                <p class="fw-bold">${question.question}</p>
+                <div class="options">
+        `;
+        
+        question.options.forEach((option, optIndex) => {
+            quizHTML += `
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" 
+                           name="question_${index}" value="${optIndex}" 
+                           id="q${index}_opt${optIndex}" required>
+                    <label class="form-check-label" for="q${index}_opt${optIndex}">
+                        ${option}
+                    </label>
+                </div>
+            `;
+        });
+        
+        quizHTML += `</div></div>`;
+    });
+    
+    quizHTML += `
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success w-100">
+                <i class="fas fa-paper-plane"></i> Submit Quiz
+            </button>
+        </div>
+        </form>
+    `;
+    
+    // Update modal content
+    document.getElementById('quizContent').innerHTML = quizHTML;
+    
+    // Show the modal
+    const quizModal = new bootstrap.Modal(document.getElementById('quizModal'));
+    quizModal.show();
+    
+    // Handle form submission
+    document.getElementById('quizForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitQuiz(quiz.id, quiz.questions);
+    });
+}
+
+function submitQuiz(quizId, questions) {
+    console.log('Submitting quiz:', quizId);
+    
+    const form = document.getElementById('quizForm');
+    const formData = new FormData(form);
+    
+    const answers = [];
+    let allAnswered = true;
+    const unansweredQuestions = [];
+    
+    // Collect answers
+    questions.forEach((question, index) => {
+        const selectedOption = formData.get(`question_${index}`);
+        if (selectedOption === null) {
+            allAnswered = false;
+            unansweredQuestions.push(index + 1);
+            answers.push(-1);
+        } else {
+            answers.push(parseInt(selectedOption));
+        }
+    });
+    
+    // Validate all questions are answered
+    if (!allAnswered) {
+        alert(`Please answer all questions before submitting. Unanswered questions: ${unansweredQuestions.join(', ')}`);
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = document.querySelector('#quizForm button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    
+    // Send to server
+    fetch('/users/submit_quiz', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            quiz_id: quizId,
+            answers: answers
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        showResults(data, questions, answers);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error submitting quiz. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Quiz';
+    });
+}
+
+function showResults(data, questions, userAnswers) {
+    // Check if perfect score (100%)
+    const isPerfectScore = data.score === 100;
+    
+    let resultsHTML = `
+        <div class="text-center">
+            <h4>Quiz Completed!</h4>
+            <div class="score-display mb-4">
+                <h1 class="text-${data.score >= 80 ? 'success' : data.score >= 60 ? 'warning' : 'danger'}">
+                    ${data.score.toFixed(1)}%
+                </h1>
+                <p>You got ${data.correct_answers} out of ${data.total_questions} correct</p>
+            </div>
+            ${isPerfectScore ? `
+                <div class="perfect-score-badge">
+                    ⭐ Perfect Score! ⭐
+                </div>
+            ` : ''}
+            <p><strong>Points Earned:</strong> ${(data.correct_answers * 10)}</p>
+    `;
+    
+    // Show question review
+    resultsHTML += `
+        <div class="mt-4 text-start">
+            <h6>Question Review:</h6>
+    `;
+    
+    questions.forEach((question, index) => {
+        const userAnswer = userAnswers[index];
+        const correctAnswer = question.correct;
+        const isCorrect = userAnswer === correctAnswer;
+        const userAnswerText = question.options[userAnswer];
+        const correctAnswerText = question.options[correctAnswer];
+        
+        resultsHTML += `
+            <div class="card mb-2 ${isCorrect ? 'border-success' : 'border-danger'}">
+                <div class="card-body p-3">
+                    <h6 class="card-title">Q${index + 1}: ${question.question}</h6>
+                    <p class="mb-1 ${isCorrect ? 'text-success' : 'text-danger'}">
+                        <strong>Your answer:</strong> ${userAnswerText}
+                        ${isCorrect ? ' <i class="fas fa-check"></i>' : ' <i class="fas fa-times"></i>'}
+                    </p>
+                    ${!isCorrect ? `
+                        <p class="mb-1 text-success">
+                            <strong>Correct answer:</strong> ${correctAnswerText}
+                        </p>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    resultsHTML += `
+            </div>
+    `;
+    
+    // Add recommendations if available
+    if (data.recommendations && data.recommendations.length > 0) {
+        resultsHTML += `
+            <div class="mt-4 pt-3 border-top">
+                ${data.recommendation_message ? `<p class="alert alert-primary">${data.recommendation_message}</p>` : ''}
+                <h6 class="mb-3">📚 Recommended Videos:</h6>
+                <div class="recommendations-container">
+        `;
+        
+        data.recommendations.forEach((rec) => {
+            resultsHTML += `
+                <div class="card mb-3 recommendation-card">
+                    <div class="card-body">
+                        <h6 class="card-title mb-2">
+                            <i class="fas fa-video text-primary"></i> ${rec.title}
+                        </h6>
+                        <p class="card-text small text-muted mb-2">${rec.description}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-info">${rec.difficulty}</span>
+                            <span class="badge bg-secondary">${rec.duration}</span>
+                        </div>
+                        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(rec.youtube_search)}" 
+                           target="_blank" class="btn btn-sm btn-primary mt-2">
+                            <i class="fab fa-youtube"></i> Watch on YouTube
+                        </a>
+                    </div>
+                </div>
+            `;
+        });
+        
+        resultsHTML += `
+                </div>
+            </div>
+        `;
+    }
+    
+    resultsHTML += `
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-star"></i> Keep learning to earn more points and badges!
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('resultsContent').innerHTML = resultsHTML;
+    
+    // Hide quiz modal and show results modal
+    const quizModal = bootstrap.Modal.getInstance(document.getElementById('quizModal'));
+    quizModal.hide();
+    
+    const resultsModal = new bootstrap.Modal(document.getElementById('resultsModal'));
+    resultsModal.show();
+    
+    // Show celebration animation if perfect score
+    if (isPerfectScore) {
+        triggerCelebration();
+    }
+    
+    // Refresh page after results modal is closed to update dashboard
+    document.getElementById('resultsModal').addEventListener('hidden.bs.modal', function() {
+        location.reload();
+    });
+}
+
+function triggerCelebration() {
+    // Create celebration container
+    const celebrationContainer = document.createElement('div');
+    celebrationContainer.className = 'celebration-container';
+    document.body.appendChild(celebrationContainer);
+    
+    // Array of party emojis
+    const emojis = ['🎉', '🎊', '🎈', '⭐', '✨', '🌟', '💫', '🏆', '👏', '🎯', '🚀', '💯'];
+    
+    // Create confetti pieces
+    const confettiCount = 50;
+    for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        
+        // Random starting position
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.top = -30 + 'px';
+        
+        // Random animation delay
+        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+        confetti.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+        
+        celebrationContainer.appendChild(confetti);
+    }
+    
+    // Create celebration text
+    const celebrationText = document.createElement('div');
+    celebrationText.className = 'celebration-text';
+    celebrationText.innerHTML = `
+        <div>
+            <span class="celebration-emoji">🎉</span>
+            <span class="celebration-emoji">👏</span>
+            <span class="celebration-emoji">🎉</span>
+        </div>
+        <div class="celebration-message">Perfect Score! Amazing Job! 🌟</div>
+    `;
+    document.body.appendChild(celebrationText);
+    
+    // Play celebration sound if available
+    playCelebrationSound();
+    
+    // Remove celebration after 5 seconds
+    setTimeout(() => {
+        celebrationContainer.remove();
+        celebrationText.remove();
+    }, 5000);
+}
+
+function playSound(frequency, duration) {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration);
+    } catch (e) {
+        console.log('Audio context not supported');
+    }
+}
+
+function playChime() {
+    playSound(523.25, 0.2); // C5 note
+    setTimeout(() => playSound(659.25, 0.2), 200); // E5 note
+    setTimeout(() => playSound(783.99, 0.3), 400); // G5 note
+}
+
+function playCelebrationSound() {
+    playChime();
+    setTimeout(() => playChime(), 600);
+}
+</script>
+{% endblock %}

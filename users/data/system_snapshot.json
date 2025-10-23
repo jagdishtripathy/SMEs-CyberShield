@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "platform": "Windows",
+    "hostname": "Acer",
+    "arch": "AMD64",
+    "python_version": "3.14.0"
+  },
+  "system": {
+    "cpu": {
+      "cpu_percent": 29.1,
+      "cpu_count": 12
+    },
+    "memory": {
+      "total": 16870006784,
+      "available": 7374127104,
+      "percent": 56.3,
+      "used": 9495879680,
+      "free": 7374127104
+    },
+    "swap": {
+      "total": 4563402752,
+      "used": 474030080,
+      "free": 4089372672,
+      "percent": 10.4,
+      "sin": 0,
+      "sout": 0
+    },
+    "disks": [
+      {
+        "device": "C:\\",
+        "mountpoint": "C:\\",
+        "fstype": "NTFS",
+        "usage": {
+          "total": 511075938304,
+          "used": 154111557632,
+          "free": 356964380672,
+          "percent": 30.2
+        }
+      },
+      {
+        "device": "D:\\",
+        "mountpoint": "D:\\",
+        "fstype": "NTFS",
+        "usage": {
+          "total": 500090007552,
+          "used": 261469581312,
+          "free": 238620426240,
+          "percent": 52.3
+        }
+      }
+    ]
+  },
+  "network": {},
+  "defender": {
+    "AntivirusEnabled": true,
+    "RealTimeProtectionEnabled": true,
+    "AntivirusSignatureAge": 1
+  },
+  "firewall": [
+    {
+      "Name": "Domain",
+      "Enabled": 1
+    },
+    {
+      "Name": "Private",
+      "Enabled": 1
+    },
+    {
+      "Name": "Public",
+      "Enabled": 1
+    }
+  ]
+}

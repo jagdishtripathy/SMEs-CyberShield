@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cybersecurity Training{% endblock %}</title>
+
+    <!-- ✅ Bootstrap & FontAwesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- ✅ Load from user blueprint static folder -->
+    <link href="{{ url_for('user_bp.static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('user_bp.dashboard') }}">
+                <i class="fas fa-shield-alt"></i> CyberShield
+            </a>
+            
+            {% if current_user.is_authenticated %}
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user"></i> {{ current_user.username }}
+                    <span class="badge bg-primary">{{ current_user.score }} pts</span>
+                </span>
+
+                <!-- ✅ Navigation links -->
+                <a class="nav-link" href="{{ url_for('user_bp.dashboard') }}">Dashboard</a>
+                <a class="nav-link" href="{{ url_for('user_syshealth') }}">SystemHealth</a>
+                <a class="nav-link" href="{{ url_for('user_bp.quiz') }}">Training</a>
+                <a class="nav-link" href="{{ url_for('user_bp.url_checker_page') }}">URL Checker</a>
+                <a class="nav-link" href="{{ url_for('user_bp.leaderboard') }}">Leaderboard</a>
+                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+            </div>
+            {% else %}
+            <!-- If not logged in -->
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('user_bp.login') }}">Login</a>
+                <a class="nav-link" href="{{ url_for('user_bp.register') }}">Register</a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- ✅ Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('user_bp.static', filename='js/script.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

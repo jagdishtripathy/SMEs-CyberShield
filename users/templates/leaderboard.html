@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - Cybersecurity Training{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-trophy"></i> Security Champions Leaderboard</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>User</th>
+                                <th>Score</th>
+                                <th>Badges</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in leaderboard %}
+                            <tr class="{{ 'table-warning' if user.username == current_user.username }}">
+                                <td>
+                                    {% if loop.index == 1 %}
+                                        <i class="fas fa-trophy text-warning"></i>
+                                    {% elif loop.index == 2 %}
+                                        <i class="fas fa-trophy text-secondary"></i>
+                                    {% elif loop.index == 3 %}
+                                        <i class="fas fa-trophy text-danger"></i>
+                                    {% else %}
+                                        {{ loop.index }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ user.username }}
+                                    {% if user.username == current_user.username %}
+                                        <span class="badge bg-primary">You</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ user.score }}</strong>
+                                </td>
+                                <td>
+                                    {% for badge in user.badges %}
+                                        <span class="badge bg-warning mb-1">{{ badge }}</span>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if not leaderboard %}
+                <div class="text-center py-4">
+                    <p class="text-muted">No users on the leaderboard yet. Be the first to complete training!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>How to Earn Points</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="fas fa-check text-success"></i> Complete training modules
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check text-success"></i> Score high on quizzes
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check text-success"></i> Report suspicious URLs
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-check text-success"></i> Maintain consistent training
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Badge Requirements</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <span class="badge bg-secondary">Getting Started</span> - Score 10+ points
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge bg-warning">Security Enthusiast</span> - Score 100+ points
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge bg-success">Security Driver</span> - Score 500+ points
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge bg-primary">Security Champion</span> - Score 1000+ points
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

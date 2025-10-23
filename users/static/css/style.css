@@ -1,0 +1,486 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.progress {
+    height: 70px;
+}
+
+.question-container {
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+.form-check-input:checked {
+    background-color: #5296fb;
+    border-color: #5295fb;
+}
+
+.btn {
+    border-radius: 0.375rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Custom badge styles */
+.badge.bg-warning {
+    color: #000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Toast Notifications */
+#toastContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toast {
+    min-width: 300px;
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+.toast-header {
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+}
+
+.toast-body {
+    padding: 0.75rem 1rem;
+    background-color: #ffffff;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* Security Components Styling */
+.list-group-item {
+    border-left: 4px solid #dee2e6 !important;
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Color-coded security status */
+.list-group-item:has(.bg-success) {
+    border-left-color: #198754 !important;
+    background-color: #f0f9f6 !important;
+}
+
+.list-group-item:has(.bg-warning) {
+    border-left-color: #ffc107 !important;
+    background-color: #fffbf0 !important;
+}
+
+.list-group-item:has(.bg-danger) {
+    border-left-color: #dc3545 !important;
+    background-color: #ffe5e5 !important;
+}
+
+.list-group-item:has(.bg-secondary) {
+    border-left-color: #6c757d !important;
+    background-color: #f5f5f5 !important;
+}
+
+/* Badge styling with better contrast */
+.badge {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.badge.bg-success {
+    background-color: #198754 !important;
+    color: #fff;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: #fff;
+}
+
+/* Score Gauge Tooltip */
+.score-tooltip {
+    position: absolute;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    white-space: nowrap;
+}
+
+.score-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #667eea;
+}
+
+/* Password Show/Hide Toggle Styles */
+.password-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-group .form-control {
+    padding-right: 2.5rem;
+}
+
+.btn-password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6c757d;
+    font-size: 1rem;
+    padding: 0.25rem 0.5rem;
+    transition: color 0.2s ease;
+    z-index: 10;
+}
+
+.btn-password-toggle:hover {
+    color: #495057;
+}
+
+.btn-password-toggle:focus {
+    outline: none;
+    color: #0d6efd;
+}
+
+.btn-password-toggle.show {
+    color: #0d6efd;
+}
+
+/* ============================================
+   RECOMMENDATION CARDS STYLING
+   ============================================ */
+
+.recommendation-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    position: relative;
+    overflow: hidden;
+}
+
+.recommendation-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #0dcaf0, #198754);
+}
+
+.recommendation-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 123, 255, 0.15);
+    border-color: #0d6efd;
+}
+
+.recommendation-card .card-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.recommendation-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.recommendation-card .card-text {
+    line-height: 1.6;
+}
+
+.recommendation-card .card-footer {
+    padding: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.recommendation-card .btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    transform: scale(1.02);
+}
+
+/* Badge styling for skill levels */
+.badge.bg-primary {
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Info alert for recommendations header */
+#recommendationsContainer .alert-info {
+    background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+    border: none;
+    color: white;
+}
+
+#recommendationsContainer .alert-info .alert-heading {
+    color: white;
+    font-weight: 600;
+}
+
+#recommendationsContainer .alert-info .badge {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Loading spinner */
+.spinner-border-primary {
+    border-color: #0d6efd;
+    border-right-color: transparent;
+}
+
+/* Success message styling */
+#recommendationsContainer .alert-success {
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    color: #0f5132;
+}
+
+/* Small text in recommendations */
+.recommendation-card small {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.recommendation-card small strong {
+    color: #0d6efd;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .recommendation-card {
+        margin-bottom: 1rem;
+    }
+    
+    .recommendation-card .card-title {
+        font-size: 1rem;
+    }
+}
+
+/* Animation for recommendations appearing */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.recommendation-card {
+    animation: slideInUp 0.5s ease-out;
+}
+
+/* Perfect Score Celebration Animations */
+.celebration-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2000;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    font-size: 24px;
+    line-height: 20px;
+    text-align: center;
+}
+
+@keyframes fall {
+    to {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+@keyframes sway {
+    0%, 100% {
+        transform: translateX(0) translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateX(100px) translateY(25vh) rotate(180deg);
+    }
+    50% {
+        transform: translateX(-50px) translateY(50vh) rotate(360deg);
+    }
+    75% {
+        transform: translateX(75px) translateY(75vh) rotate(540deg);
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+.confetti {
+    animation: sway 3s ease-in forwards, fall 3s ease-in forwards;
+}
+
+.celebration-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2001;
+    text-align: center;
+    pointer-events: none;
+}
+
+.celebration-emoji {
+    font-size: 5rem;
+    animation: bounce 0.6s ease-in-out infinite;
+    display: inline-block;
+    margin: 0 10px;
+}
+
+.celebration-message {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #28a745;
+    margin-top: 20px;
+    animation: slideInDown 0.8s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.perfect-score-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: white;
+    padding: 15px 30px;
+    border-radius: 50px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-top: 15px;
+    animation: pulse 1s ease-in-out infinite;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
