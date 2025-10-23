@@ -2,6 +2,10 @@ from flask import Blueprint, request, jsonify, session
 import os
 from .gemini_api import GeminiChatbot
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -10,9 +14,11 @@ logger = logging.getLogger(__name__)
 # Create Blueprint
 chatbot_bp = Blueprint('chatbot', __name__, url_prefix='/chatbot')
 
-# Initialize chatbot with environment variable or default key
-# In production, use a secure method to store and retrieve API keys
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyAVM5fW5br_RIDNhmUJ1F5XaFiemVe9QuI')
+# Initialize chatbot with environment variable (no hardcoded fallback for security)
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY not found in environment variables. Please set it in your .env file.")
+
 chatbot = GeminiChatbot(api_key=GEMINI_API_KEY)
 
 @chatbot_bp.route('/chat', methods=['POST'])
@@ -36,13 +42,17 @@ def chat():
 def reset_chat():
     """
     Endpoint to reset the chat conversation.
+    Authentication is optional - works with or without logged-in session.
     """
-    # Check if user is logged in
-    if 'logged_in' not in session or not session['logged_in']:
-        logger.warning("Unauthorized attempt to reset chatbot.")
-        return jsonify({"error": "Unauthorized"}), 401
-    
     try:
+        # Check if user is logged in (optional - for tracking purposes)
+        is_authenticated = 'logged_in' in session and session['logged_in']
+        
+        if is_authenticated:
+            logger.info(f"Authenticated user reset conversation")
+        else:
+            logger.info(f"Anonymous user reset conversation")
+        
         chatbot.reset_conversation()
         return jsonify({"success": True, "message": "Conversation reset successfully"})
     except Exception as e:

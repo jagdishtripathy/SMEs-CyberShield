@@ -31,7 +31,15 @@ CORS(app)
 # Use secret key from environment variable if set, otherwise generate a new one
 FLASK_SECRET_KEY = os.getenv('FLASK_SECRET_KEY', '')
 app.secret_key = FLASK_SECRET_KEY if FLASK_SECRET_KEY else os.urandom(24)
-logging.basicConfig(level=logging.INFO)
+
+# Configure logging - reduce noise from verbose libraries
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Suppress verbose logging from external libraries
+logging.getLogger('werkzeug').setLevel(logging.WARNING)  # Suppress werkzeug DEBUG messages
+logging.getLogger('google').setLevel(logging.WARNING)  # Suppress Google API verbose logs
+logging.getLogger('absl').setLevel(logging.ERROR)  # Suppress ABSL initialization warnings
+logging.getLogger('urllib3').setLevel(logging.WARNING)  # Suppress urllib3 DEBUG messages
 
 # ---------------------------------------------------------------------
 # FLASK-LOGIN SETUP

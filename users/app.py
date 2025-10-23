@@ -307,7 +307,7 @@ def analyze_with_gemini(url, vt_stats):
     VirusTotal Stats: {vt_stats}
     Provide a security summary and recommendation.
     """
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    model = genai.GenerativeModel("gemini-flash-latest")
     response = model.generate_content(prompt)
     return response.text
 

@@ -30,7 +30,7 @@ class GeminiChatbot:
         
         # Configure the model
         self.model = genai.GenerativeModel(
-            model_name="models/gemini-2.5-pro",
+            model_name="models/gemini-flash-latest",
             generation_config={
                 "temperature": 0.7,
                 "top_p": 0.95,

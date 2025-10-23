@@ -1,6 +1,7 @@
 """
 Quiz-Based Video Recommendation System for Cybersecurity Learning
 Uses Gemini AI to suggest targeted videos based on quiz performance and topic
+With intelligent caching to reduce API quota usage
 """
 
 import google.generativeai as genai
@@ -8,6 +9,8 @@ import json
 import os
 from typing import Dict, List
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
+import hashlib
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,6 +21,58 @@ if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY not found in environment variables. Please set it in your .env file.")
 
 genai.configure(api_key=GEMINI_API_KEY)
+
+# Simple in-memory cache for recommendations (stores for 24 hours)
+# Format: {cache_key: {"data": recommendations, "timestamp": datetime}}
+_recommendation_cache = {}
+
+
+def _get_cache_key(quiz_title: str, quiz_category: str, score: float) -> str:
+    """Generate a cache key based on quiz info and performance level."""
+    performance_level = get_performance_level(score)
+    cache_str = f"{quiz_title}:{quiz_category}:{performance_level}"
+    return hashlib.md5(cache_str.encode()).hexdigest()
+
+
+def _get_cached_recommendation(cache_key: str):
+    """
+    Retrieve cached recommendation if it exists and hasn't expired.
+    
+    Args:
+        cache_key: The cache key to look up
+    
+    Returns:
+        Cached recommendation data or None if not found/expired
+    """
+    if cache_key in _recommendation_cache:
+        cached_item = _recommendation_cache[cache_key]
+        timestamp = cached_item["timestamp"]
+        
+        # Check if cache is still valid (24 hours)
+        if datetime.now() - timestamp < timedelta(hours=24):
+            print(f"✅ Using cached recommendations for {cache_key[:8]}...")
+            return cached_item["data"]
+        else:
+            # Cache expired, remove it
+            del _recommendation_cache[cache_key]
+    
+    return None
+
+
+def _cache_recommendation(cache_key: str, data: Dict) -> None:
+    """
+    Store recommendation data in cache.
+    
+    Args:
+        cache_key: The cache key
+        data: The recommendation data to cache
+    """
+    _recommendation_cache[cache_key] = {
+        "data": data,
+        "timestamp": datetime.now()
+    }
+    print(f"💾 Cached recommendations for {cache_key[:8]}... (24-hour TTL)")
+
 
 
 def get_performance_level(score: float) -> str:
@@ -41,6 +96,7 @@ def get_performance_level(score: float) -> str:
 def get_ai_recommendations_for_quiz(quiz_title: str, quiz_category: str, score: float) -> Dict:
     """
     Generate AI-powered video recommendations based on quiz performance.
+    Implements caching to reduce API quota usage.
     
     Args:
         quiz_title: Title of the quiz (e.g., "Phishing Awareness")
@@ -51,6 +107,12 @@ def get_ai_recommendations_for_quiz(quiz_title: str, quiz_category: str, score: 
         Dictionary containing recommendations and metadata
     """
     performance_level = get_performance_level(score)
+    
+    # Check cache first - HUGE quota saver!
+    cache_key = _get_cache_key(quiz_title, quiz_category, score)
+    cached_result = _get_cached_recommendation(cache_key)
+    if cached_result:
+        return cached_result
     
     # Build performance-specific prompts for non-technical users
     prompts = {
@@ -149,7 +211,7 @@ IMPORTANT: Return ONLY valid JSON, no other text or explanation.
     prompt = prompts.get(performance_level, prompts["basic"])
     
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-flash-latest")
         response = model.generate_content(prompt)
         
         response_text = response.text.strip()
@@ -167,19 +229,24 @@ IMPORTANT: Return ONLY valid JSON, no other text or explanation.
                 # Fallback recommendations if parsing fails
                 recommendations_data = generate_fallback_recommendations(quiz_title, performance_level)
         
-        return {
+        result = {
             "success": True,
             "performance_level": performance_level,
             "score": score,
             "quiz_title": quiz_title,
             "recommendations": recommendations_data.get("recommendations", []),
-            "generated_at": __import__('datetime').datetime.now().isoformat()
+            "generated_at": __import__('datetime').datetime.now().isoformat(),
+            "from_cache": False
         }
+        
+        # Cache the result for future use
+        _cache_recommendation(cache_key, result)
+        return result
     
     except Exception as e:
         print(f"Error generating recommendations: {str(e)}")
         # Return fallback recommendations on error
-        return {
+        fallback_result = {
             "success": False,
             "performance_level": performance_level,
             "score": score,
