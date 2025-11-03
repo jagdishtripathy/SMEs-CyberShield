@@ -342,7 +342,8 @@ def get_logs():
         # Try Elasticsearch first
         if es:
             try:
-                query = {"size": 100, "sort": [{"timestamp": "desc"}]}
+                # Use unmapped_type so sorting won't fail if the index has no mapping for `timestamp`
+                query = {"size": 100, "sort": [{"timestamp": {"order": "desc", "unmapped_type": "date"}}]}
                 result = es.search(index="siem-logs", body=query)
                 logs = [{"timestamp": h["_source"].get("timestamp", ""), "message": h["_source"].get("message", ""), "source": "elasticsearch"}
                         for h in result["hits"]["hits"]]
@@ -373,9 +374,10 @@ def refresh_logs():
         # Try Elasticsearch first
         if es:
             try:
+                # Use unmapped_type to avoid BadRequestError when timestamp mapping is missing
                 query = {
                     "size": 50,
-                    "sort": [{"timestamp": {"order": "desc"}}]
+                    "sort": [{"timestamp": {"order": "desc", "unmapped_type": "date"}}]
                 }
                 result = es.search(index="siem-logs", body=query)
                 logs = [{"message": h["_source"].get("message", ""), "timestamp": h["_source"].get("timestamp", ""), "source": "elasticsearch"}
@@ -418,9 +420,10 @@ def stream_realtime_logs():
         while retry_count < max_retries:
             try:
                 # Query for logs newer than the last timestamp
+                # Use unmapped_type for safe sorting when index mapping may not contain `timestamp`
                 query = {
                     "size": 20,
-                    "sort": [{"timestamp": {"order": "asc"}}],
+                    "sort": [{"timestamp": {"order": "asc", "unmapped_type": "date"}}],
                     "query": {
                         "range": {
                             "timestamp": {
@@ -452,7 +455,8 @@ def stream_realtime_logs():
                 logging.error(f"Error in stream_realtime_logs (ES): {str(e)}")
                 # Fallback to file streaming on error
                 yield f"data: {json.dumps({'message': 'Switching to file-based streaming...', 'timestamp': datetime.now(timezone.utc).isoformat()})}\n\n"
-                for line_data in stream_logs_from_file().get_wsgi_app():
+                # stream_logs_from_file() returns a Flask Response wrapping a generator; iterate its .response
+                for line_data in stream_logs_from_file().response:
                     yield line_data
                 return
 
