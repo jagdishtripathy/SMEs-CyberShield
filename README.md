@@ -18,7 +18,7 @@ This README explains how to set up the project locally (Windows PowerShell), con
 1. Clone the repository and change directory:
 
 ```powershell
-git clone <repo-url> d:\project_SMEs
+git clone https://github.com/jagdishtripathy/SMEs-CyberShield.git
 cd d:\project_SMEs
 ```
 
