@@ -209,6 +209,27 @@ class AlertManager:
             conn.commit()
             alert_id = cursor.lastrowid
             logger.info(f"Alert stored with ID: {alert_id}")
+            # Fire-and-forget notification to external channels (Discord, etc.)
+            try:
+                # Local import to avoid import cycles and make the notifier optional
+                from utils.alert_notifier import notify
+                from threading import Thread
+
+                alert_obj = {
+                    "id": alert_id,
+                    "title": alert_type,
+                    "message": message,
+                    "severity": severity,
+                    "source_ip": source_ip,
+                    "dest_ip": dest_ip,
+                    "event_data": event_data,
+                    "timestamp": datetime.now().isoformat()
+                }
+
+                Thread(target=notify, args=(alert_obj,), daemon=True).start()
+            except Exception as e:
+                logger.warning(f"Alert notification failed to start: {e}")
+
             return alert_id
         except Exception as e:
             logger.error(f"Error storing alert: {e}")

@@ -78,7 +78,7 @@ Or using Python Elasticsearch client (example):
 
 ```python
 from elasticsearch import Elasticsearch
-es = Elasticsearch(["http://localhost:9200"])  # add auth if required
+es = Elasticsearch(["https://localhost:9200"])  # add auth if required
 mapping = {
   "mappings": {
     "properties": {
