@@ -48,6 +48,69 @@ function configureChartJsDefaults() {
     }
 }
 
+/* ----------------------
+   Theme toggle helpers
+   ---------------------- */
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+}
+
+function updateThemeIcon() {
+    const icon = document.getElementById('themeIcon');
+    if (!icon) return;
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    icon.className = dark ? 'fas fa-sun' : 'fas fa-moon';
+}
+
+function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    applyTheme(next === 'dark' ? 'dark' : 'light');
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    updateThemeIcon();
+    // Reconfigure Chart.js defaults and update any existing charts so they adopt new theme colors
+    try {
+        configureChartJsDefaults();
+        if (typeof Chart !== 'undefined') {
+            Object.values(Chart.instances).forEach(inst => {
+                try {
+                    // Update dataset colors heuristically based on current CSS vars
+                    if (inst.data && Array.isArray(inst.data.datasets)) {
+                        inst.data.datasets.forEach(ds => {
+                            if (ds.borderColor) ds.borderColor = getCssVariable('--accent-primary') || ds.borderColor;
+                            if (ds.backgroundColor) ds.backgroundColor = getCssVariable('--accent-secondary') || ds.backgroundColor;
+                        });
+                    }
+                    // Update tooltip / legend colors
+                    if (inst.options && inst.options.plugins && inst.options.plugins.legend) {
+                        inst.options.plugins.legend.labels = inst.options.plugins.legend.labels || {};
+                        inst.options.plugins.legend.labels.color = getCssVariable('--text-primary') || inst.options.plugins.legend.labels.color;
+                    }
+                    inst.update();
+                } catch (e) { /* ignore individual chart update errors */ }
+            });
+        }
+    } catch(e) { console.warn('Chart refresh on theme toggle failed', e); }
+}
+
+function initTheme() {
+    let stored = null;
+    try { stored = localStorage.getItem('theme'); } catch (e) { stored = null; }
+    if (stored === 'dark' || stored === 'light') {
+        applyTheme(stored === 'dark' ? 'dark' : 'light');
+    } else {
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(prefersDark ? 'dark' : 'light');
+    }
+}
+
+// Initialize theme early so Chart.js reads correct CSS variables
+initTheme();
+updateThemeIcon();
 configureChartJsDefaults();
 
 // =====================================================
@@ -786,6 +849,16 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("Auto-refreshing alerts...");
             fetchAlerts(20);
         }, 30000);
+                   
+        // Theme toggle button wiring (if present)
+        const themeBtn = document.getElementById('themeToggle');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', (e) => { e.preventDefault(); toggleTheme(); });
+            themeBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTheme(); } });
+        }
+
+        // Ensure icon matches current theme
+        updateThemeIcon();
 
         // --- Test for IP Block Popup ---
         // Uncomment the line below to test the popup 5 seconds after the page loads

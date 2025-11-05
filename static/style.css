@@ -2,97 +2,170 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap'); /* Import Poppins font */
 
 /* ============================================================= */
-/* === INTRUSENSE SIEM DASHBOARD - LIGHT PROFESSIONAL THEME ==== */
+/* === CYBERSHIELD SIEM DASHBOARD - LIGHT PROFESSIONAL THEME ==== */
 /* ============================================================= */
 :root {
     --bg-body: #f8f9fa;
     --bg-panel: #ffffff;
-    --bg-nav: #212529;
+    --bg-nav: #0b1220; /* dark navy */
+    --nav-text: #ffffff;
     --bg-input: #ffffff;
-    --text-primary: #212529;
+    --text-primary: #0b1220;
     --text-secondary: #6c757d;
-    --border-color: #fff;
+    --border-color: #e6eef8;
+    --panel-radius: 12px;
+    --panel-border-radius: 12px;
+    --panel-shadow: 0 10px 30px rgba(13, 110, 253, 0.06);
 
-    /* Accent Colors */
-    --accent-primary: #ede6e68c;
+    /* Accent Colors (use gradient for eye-catching look) */
+    --accent-gradient: linear-gradient(90deg, #0ea5e9 0%, #3b82f6 50%, #7c3aed 100%);
+    --accent-primary: #3b82f6;
     --accent-secondary: #0dcaf0;
-    --accent-glow: rgba(13, 110, 253, 0.3);
+    --accent-glow: rgba(59, 130, 246, 0.28);
+
+    /* Additional semantic variables (previously referenced but not defined) */
+    --error-text: #7f1d1d;
+    --error-border: #dc2626;
+    --error-bg: rgba(220, 38, 38, 0.06);
+    --bg-dark: #0b1220; /* used for button text on light theme */
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace;
+    --font-primary: 'Poppins', sans-serif;
+    --debug-color: #a855f7;
 
     /* Status Colors */
-    --success-color: #198754;
-    --warning-color: #ffc107;
-    --error-color: #dc3545;
-    --info-color: #0dcaf0;
+    --success-color: #16a34a;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --info-color: #06b6d4;
+
+    /* Misc */
+    --glass: rgba(255,255,255,0.6);
 }
+
+/* Responsive adjustments for admin page (mobile-first improvements) */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+/* Small screen nav: make navigation horizontal and scrollable */
+@media (max-width: 768px) {
+    nav[role="navigation"] {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    nav[role="navigation"] .user-info { display: none; }
+    .main-container { padding: 12px; }
+    .panel { width: 100%; }
+    .filters { flex-direction: column; gap: 8px; align-items: stretch; }
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+    --bg-body: #071026; /* near-black navy */
+    --bg-panel: linear-gradient(180deg, rgba(6,10,20,0.9), rgba(8,14,24,0.95));
+    --bg-nav: #031226;
+    --nav-text: #e6eef8;
+    --bg-input: #07162a;
+    --text-primary: #e6eef8;
+    --text-secondary: #9aa6b2;
+    --border-color: rgba(255,255,255,0.04);
+    --panel-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    --accent-primary: #60a5fa;
+    --accent-secondary: #2dd4bf;
+    --accent-glow: rgba(96,165,250,0.18);
+    --glass: rgba(255,255,255,0.03);
+
+    /* Dark theme semantic overrides */
+    --error-text: #fecaca;
+    --error-border: #ef4444;
+    --error-bg: rgba(239, 68, 68, 0.06);
+    --bg-dark: #e6eef8; /* light text used on dark backgrounds */
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace;
+    --font-primary: 'Poppins', sans-serif;
+    --debug-color: #c4b5fd;
+}
+
+/* Smooth theme transitions */
+* { transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease; }
 
 /* === Global Reset === */
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: var(--bg-body);
+    background: var(--bg-body);
     color: var(--text-primary);
     margin: 0;
     padding: 0;
     line-height: 1.6;
+    -webkit-font-smoothing:antialiased;
 }
 
 /* ============================================================= */
 /* === NAVIGATION BAR ========================================== */
 /* ============================================================= */
 nav {
-    background-color: var(--bg-nav);
+    background: var(--bg-nav);
+    color: var(--nav-text);
     border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--panel-shadow);
     height: 45px;
     display: flex;
+   
     align-items: center;
-    padding: 0.5rem;
+    padding: 0.5rem 0.5rem;
+    padding-left: 20px;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 1000;
-    transition: all 0.3s ease;
+    /* z-index: 1000; */
 }
 
 nav .logo {
     font-weight: 700;
-    font-size: 1.5rem;
-    color: #ffffff;
-    margin-right: 40px;
-    margin-left: 30px;
-    font-family: 'Orbitron', 'Exo 2', sans-serif;
+    font-size: 1rem;
+    color: var(--nav-text);
+    /* margin-right: 18px; */
+    /* margin-left: 18px; */
+    letter-spacing: 01px;
 }
 
 nav a.nav-link {
     text-decoration: none;
-    color: var(--text-secondary);
-    padding: 8px;
+    color: var(--nav-text);
+    padding: 10px 12px;
     height: 100%;
     display: flex;
     align-items: center;
     border-bottom: 3px solid transparent;
-    transition: all 0.3s ease;
+    /* transition: color 0.18s ease, transform 0.18s ease; */
 }
 
 nav a.nav-link:hover {
     color: var(--accent-primary);
-    background-color: rgba(228, 229, 232, 0.05);
+    transform: translateY(-2px);
 }
 
 nav a.nav-link.active {
     color: var(--accent-primary);
-    border-bottom-color: var(--accent-primary);
-    font-weight: 600;
+    /* border-bottom-color: var(--accent-primary); */
+    /* font-weight: 700; */
 }
 
 nav .user-info {
-    margin-left: 270px;
+    margin-left: 200px;
     margin-right: 10px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-size: 0.9em;
-    color: var(--text-secondary);
+    color: var(--nav-text);
     position:relative;
 }
 
@@ -140,20 +213,20 @@ main.main-container {
     padding: 0px;
     margin-top: 20px;
     /* border: 10px solid var(--border-color) transparent; */
-    border-radius: 0.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--panel-shadow);
     transition: all 0.3s ease;
     display: flexbox;
     flex-direction: row;
 }
 .panel:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 20px 40px rgba(14, 165, 233, 0.06);
 }
 
 .panel-header {
     padding: 15px 25px;
-    background-color: #f8f9fa;
+    background: transparent;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     flex-direction: row;
@@ -175,8 +248,11 @@ main.main-container {
 /* Total Events Panel */
 .total-count-display {
     font-size: 3rem;
-    color: var(--accent-primary);
-    font-weight: 700;
+    background: var(--accent-gradient);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
     text-align: center;
     line-height: 1.2;
 }
@@ -210,17 +286,18 @@ main.main-container {
     outline: none;
 }
 .filters button {
-    background-color: var(--accent-primary);
-    color: #747272;
+    background: var(--accent-gradient);
+    color: #fff;
     border: none;
-    border-radius: 0.375rem;
+    border-radius: 0.5rem;
     padding: 8px 18px;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 6px 18px rgba(59,130,246,0.08);
 }
 .filters button:hover {
-    background-color: #0b5ed7;
-    transform: scale(1.05);
+    transform: translateY(-3px);
+    box-shadow: 0 18px 36px rgba(59,130,246,0.12);
 }
 
 
@@ -242,17 +319,17 @@ main.main-container {
 }
 
 .log-output {
-    background-color: #000; /* Keep black bg for logs */
-    color: #ccc; /* Default log text color */
+    background-color: #000; /* Keep black bg for logs for readability */
+    color: #e6eef8; /* Bright text for logs */
     padding: 20px;
-    border-radius: 4px;
+    border-radius: 8px;
     height: 65vh;
     overflow: auto;
-    font-family: var(--font-mono);
-    font-size: 0.9em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace;
+    font-size: 0.95em;
     white-space: pre;
     border: 1px solid var(--border-color);
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+    box-shadow: inset 0 6px 16px rgba(0,0,0,0.6);
     margin-bottom: 15px; /* Space before status/button */
 }
 
@@ -284,22 +361,24 @@ main.main-container {
     font-size: 0.9em;
 }
 
+/* Refresh button style */
 #refresh-logs-button {
-     margin: 0 20px 20px 20px; /* Match padding */
-     padding: 9px 20px;
-     background-color: var(--accent-secondary);
-     color: var(--bg-dark);
-     font-weight: 600;
+     margin: 0 20px 20px 20px;
+     padding: 10px 20px;
+     background: var(--accent-gradient);
+     color: #fff;
+     font-weight: 700;
      border: none;
-     border-radius: var(--panel-border-radius);
+     border-radius: 10px;
      cursor: pointer;
-     transition: background-color 0.2s ease, box-shadow 0.2s ease;
+     box-shadow: 0 12px 30px rgba(59,130,246,0.08);
+     transition: transform 0.18s ease, box-shadow 0.18s ease;
  }
  #refresh-logs-button:hover {
-     background-color: var(--accent-primary);
-     box-shadow: 0 0 10px var(--accent-glow);
+     transform: translateY(-4px);
+     box-shadow: 0 24px 50px rgba(59,130,246,0.12);
  }
-
+ 
 
 /* === Snort Alerts & System Health === */
 
@@ -380,35 +459,6 @@ main.main-container {
 
 #snort-alerts-list li.error-message { color: var(--error-text); padding: 15px 20px; border-left: 5px solid var(--error-border); background-color: rgba(220, 38, 38, 0.1); }
 
-
-/* === Login Page Styles === */
-.login-container { 
-    width: 400px;
-    
-    margin-top: 300px ;
-    padding: 40px; 
-    border: 1px solid var(--border-color); 
-    border-radius: var(--panel-border-radius); 
-    background-color: var(--bg-panel); 
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
- }
-.login-container h2 { 
-    text-align: center; 
-    margin-bottom: 30px; 
-    color: var(--accent-primary); 
-    font-size: 1.8em; 
-    font-weight: 700; 
-    text-shadow: 0 0 5px var(--accent-glow); 
-}
-.login-container label { 
-    display: block; 
-    margin-bottom: 10px; 
-    font-weight: 600; 
-    color: var(--text-secondary); }
-.login-container input[type="text"], .login-container input[type="password"] { width: 100%; padding: 12px 15px; margin-bottom: 20px; box-sizing: border-box; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--panel-border-radius); color: var(--text-primary); font-family: var(--font-primary); font-size: 1em; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-.login-container input[type="text"]:focus, .login-container input[type="password"]:focus { outline: none; border-color: var(--accent-secondary); box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3); }
-.login-container button { width: 100%; padding: 14px; background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary)); color: var(--bg-dark); border: none; border-radius: var(--panel-border-radius); cursor: pointer; font-size: 1.1em; font-weight: 700; transition: transform 0.2s ease, box-shadow 0.2s ease; margin-top: 10px; }
-.login-container button:hover { transform: scale(1.02); box-shadow: 0 0 15px var(--accent-glow); }
 
 /* General Error box style */
 .error { color: var(--error-text); background-color: var(--error-bg); border: 1px solid var(--error-border); padding: 12px 15px; margin-top: 20px; border-radius: var(--panel-border-radius); text-align: center; font-size: 0.95em; }
@@ -543,17 +593,17 @@ main.main-container {
 }
 
 .popup-content {
-    background-color: var(--bg-panel); /* Use panel background */
-    margin: auto; /* Center horizontally (alternative to flex justify) */
-    padding: 25px 30px; /* More padding */
-    border: 1px solid var(--border-color); /* Use theme border */
-    border-radius: var(--panel-border-radius); /* Use theme radius */
-    width: 90%; /* Responsive width */
-    max-width: 480px; /* Max width */
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4); /* Stronger shadow */
-    position: relative; /* For positioning the close button */
-    text-align: center; /* Center text */
-    color: var(--text-primary); /* Use primary text color */
+    background: var(--bg-panel);
+    margin: auto;
+    padding: 28px 32px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 520px;
+    box-shadow: 0 30px 80px rgba(2,6,23,0.6);
+    position: relative;
+    text-align: center;
+    color: var(--text-primary);
 }
 
 .popup-content h3 {
@@ -789,8 +839,23 @@ main.main-container {
     transition: all 0.2s;
 }
 
+/* Theme toggle button (top-level static pages) */
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 36px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--nav-text);
+    border: 0.5px solid var(--border-color);
+    margin-left: 8px;
+}
+.theme-toggle-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(59,130,246,0.06); }
+
 .btn-primary {
-    background: #3b82f6;
+    background: var(--accent-gradient);
     color: white;
 }
 
@@ -799,7 +864,7 @@ main.main-container {
 }
 
 .btn-secondary {
-    background: #6b7280;
+    background: #4b5563;
     color: white;
 }
 

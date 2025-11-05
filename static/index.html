@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INTRUSENSE SIEM Dashboard</title>
+    <title>Admin Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/chatbot/static/chatbot.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -11,7 +11,7 @@
 </head>
 <body>
     <nav role="navigation">
-        <div class="logo">CyberShield</div>
+        <div class="logo"><i class="fas fa-shield-alt"></i> CyberShield</div>
         <a href="#" id="nav-dashboard" class="nav-link active" data-target="dashboard-content"><i class="icon icon-dashboard"></i> Dashboard</a>
         <a href="#" id="nav-analysis" class="nav-link" data-target="analysis-content"><i class="icon icon-analysis"></i> Analysis</a>
         <a href="#" id="nav-environment" class="nav-link" data-target="environment-content"><i class="icon icon-threat"></i> Threat Detection</a>
@@ -26,11 +26,10 @@
             <a href="#" id="logout-link"><i class="icon icon-logout"></i> Logout</a>
         </div>
         <div class="theme-toggle">
-            <input type="checkbox" id="theme-switch">
-            <label for="theme-switch" class="theme-label">
-                <i class="fas fa-sun"></i>
-                <i class="fas fa-moon"></i>
-            </label>
+            <!-- Unified theme toggle button (uses JS to persist and update icon) -->
+            <button id="themeToggle" class="btn theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme">
+                <i id="themeIcon" class="fas fa-moon"></i>
+            </button>
         </div>
     </nav>
 
