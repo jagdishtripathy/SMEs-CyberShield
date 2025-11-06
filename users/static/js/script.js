@@ -1,5 +1,72 @@
 // Cybersecurity Training App - Main JavaScript File
 
+// Theme toggle: apply and persist theme choice
+function applyTheme(theme) {
+    const html = document.documentElement;
+    const nav = document.getElementById('mainNavbar');
+    const themeIcon = document.getElementById('themeIcon');
+
+    if (theme === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+        if (nav) {
+            nav.classList.remove('navbar-light', 'bg-light');
+            nav.classList.add('navbar-dark');
+            nav.style.backgroundColor = 'var(--nav-bg)';
+        }
+        if (themeIcon) themeIcon.className = 'fas fa-sun';
+    } else {
+        html.removeAttribute('data-theme');
+        if (nav) {
+            nav.classList.remove('navbar-dark');
+            nav.classList.add('navbar-light');
+            nav.style.backgroundColor = 'var(--nav-bg)';
+        }
+        if (themeIcon) themeIcon.className = 'fas fa-moon';
+    }
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem('theme', next); } catch (e) { /* ignore */ }
+    // If Chart.js is present, attempt to refresh existing charts to use the new theme colors
+    try {
+        if (typeof Chart !== 'undefined') {
+            // Re-apply Chart defaults (if present) and update instances
+            if (typeof window.configureChartJsDefaults === 'function') window.configureChartJsDefaults();
+            Object.values(Chart.instances).forEach(inst => {
+                try {
+                    if (inst.data && Array.isArray(inst.data.datasets)) {
+                        inst.data.datasets.forEach(ds => {
+                            if (ds.borderColor) ds.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-primary').trim() || ds.borderColor;
+                            if (ds.backgroundColor) ds.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-secondary').trim() || ds.backgroundColor;
+                        });
+                    }
+                    if (inst.options && inst.options.plugins && inst.options.plugins.legend) {
+                        inst.options.plugins.legend.labels = inst.options.plugins.legend.labels || {};
+                        inst.options.plugins.legend.labels.color = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || inst.options.plugins.legend.labels.color;
+                    }
+                    inst.update();
+                } catch (e) { /* ignore individual chart errors */ }
+            });
+        }
+    } catch (e) { console.warn('Error refreshing charts on theme toggle', e); }
+}
+
+function initTheme() {
+    let stored = null;
+    try { stored = localStorage.getItem('theme'); } catch (e) { stored = null; }
+    if (stored === 'dark' || stored === 'light') {
+        applyTheme(stored);
+        return;
+    }
+
+    // Fallback: prefer system setting
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark ? 'dark' : 'light');
+}
+
 // Password Show/Hide Toggle Function
 function togglePasswordVisibility(fieldId) {
     const passwordField = document.getElementById(fieldId);
@@ -19,6 +86,28 @@ function togglePasswordVisibility(fieldId) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // initialize theme before other UI init
+    initTheme();
+
+    // wire up theme toggle button (can be present twice in DOM; attach to first available)
+    const themeButtons = document.querySelectorAll('#themeToggle');
+    if (themeButtons && themeButtons.length > 0) {
+        themeButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleTheme();
+            });
+
+            // keyboard accessibility
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleTheme();
+                }
+            });
+        });
+    }
+
     // Auto-dismiss alerts after 5 seconds
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
@@ -143,10 +232,14 @@ function initializeQuizNavigation() {
 function initializeURLChecker() {
     const urlCheckForm = document.getElementById('urlCheckForm');
     if (urlCheckForm) {
-        urlCheckForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            checkURL();
-        });
+        // Avoid double-binding when page templates attach their own handler.
+        if (!urlCheckForm.dataset.boundBy) {
+            urlCheckForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                checkURL();
+            });
+            urlCheckForm.dataset.boundBy = 'scriptjs';
+        }
         
         // Add URL validation
         const urlInput = document.getElementById('urlInput');
@@ -264,6 +357,97 @@ function displayURLResults(data) {
             riskIcon = 'fa-check-circle';
         }
     }
+
+    // Heuristic: detect obvious typosquatting / leetspeak that mimics major brands
+    (function detectTyposquat() {
+        try {
+            const raw = (document.getElementById('urlInput')?.value || '').toLowerCase().trim();
+            if (!raw) return;
+
+            // extract host-like section
+            let host = raw;
+            try {
+                // if it's a full URL, the URL constructor helps
+                const u = new URL(raw.includes('://') ? raw : 'http://' + raw);
+                host = u.hostname;
+            } catch (e) {
+                // fallback: remove path
+                host = raw.split('/')[0];
+            }
+
+            // normalize common leet substitutions
+            const norm = host.replace(/0/g,'o').replace(/1/g,'l').replace(/3/g,'e').replace(/4/g,'a').replace(/5/g,'s').replace(/7/g,'t').replace(/\|/g,'l');
+
+            const known = ['google','instagram','facebook','twitter','amazon','paypal','microsoft','apple','linkedin','github'];
+            for (const brand of known) {
+                if (norm.includes(brand)) {
+                    // escalate to High Risk when brand imitation found
+                    riskLevel = 'High Risk';
+                    riskClass = 'danger';
+                    riskIcon = 'fa-exclamation-triangle';
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('Typosquat detection failed', e);
+        }
+    })();
+
+    // Short, non-technical summary and three quick actions for end users
+    function shortSummaryFor(level) {
+        if (level === 'High Risk') {
+            return {
+                title: 'Danger — Do Not Click',
+                text: 'This link looks malicious or is a fake (typo-squatting). Do not open it.',
+                actions: ['Do not click the link', 'Report/delete the message', 'Contact IT if you clicked']
+            };
+        } else if (level === 'Medium Risk') {
+            return {
+                title: 'Be Careful',
+                text: 'This link may be risky. Only visit if you were expecting it and from a safe device.',
+                actions: ['Do not click immediately', 'Verify the sender', 'Use IT or a sandbox if needed']
+            };
+        } else if (level === 'Low Risk') {
+            return {
+                title: 'Low Risk — Caution',
+                text: 'The link appears okay but always double-check the address before entering any info.',
+                actions: ['Check the URL spelling', 'Verify the site has https', 'Don\'t give personal info']
+            };
+        }
+        return { title: 'Unknown', text: 'No clear verdict. Treat with caution.', actions: ['Don\'t click', 'Ask IT', 'Use a scanner'] };
+    }
+
+    const short = shortSummaryFor(riskLevel);
+
+    // Add short summary as a Bootstrap alert (clear color semantics)
+    const alertLevel = (riskLevel === 'High Risk') ? 'danger' : (riskLevel === 'Medium Risk') ? 'warning' : 'success';
+    resultsHTML += `
+        <div class="alert alert-${alertLevel}" role="alert">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="alert-heading"><i class="fas fa-info-circle"></i> ${short.title}</h5>
+                    <p class="mb-1">${short.text}</p>
+                </div>
+                <div class="text-end">
+                    <button id="reportDiscordBtn" class="btn btn-sm btn-outline-danger" title="Send alert to Discord"><i class="fab fa-discord"></i> Report to Discord</button>
+                    <div id="reportStatus" class="small mt-2 text-end"></div>
+                </div>
+            </div>
+            <hr>
+            <strong>Quick actions:</strong>
+            <ul class="mb-0">
+                <li>${short.actions[0]}</li>
+                <li>${short.actions[1]}</li>
+                <li>${short.actions[2]}</li>
+            </ul>
+        </div>
+    `;
+
+    // Add a toggle to show/hide detailed results (keeps UI compact for non-technical users)
+    resultsHTML += `
+        <p><a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#urlDetails" role="button" aria-expanded="false" aria-controls="urlDetails">Show details</a></p>
+        <div class="collapse" id="urlDetails">
+    `;
     
     // resultsHTML += `
     //     <div class="alert alert-${riskClass}">
@@ -306,10 +490,53 @@ function displayURLResults(data) {
     
     // Security Recommendations
     resultsHTML += createSecurityRecommendations(riskLevel);
-    
+
+    // Close details collapse
+    resultsHTML += `</div>`;
+
     results.innerHTML = resultsHTML;
     results.style.display = 'block';
-    
+
+    // Attach report-to-Discord button handler (so centralized renderer also supports reporting)
+    try {
+        const reportBtn = document.getElementById('reportDiscordBtn');
+        const reportStatus = document.getElementById('reportStatus');
+        if (reportBtn) {
+            reportBtn.addEventListener('click', function () {
+                reportBtn.disabled = true;
+                if (reportStatus) reportStatus.innerText = 'Sending alert...';
+                fetch('/users/alert/discord', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: (document.getElementById('urlInput')?.value || '' ) })
+                })
+                .then(r => r.json().then(body => ({ status: r.status, body })))
+                .then(({ status, body }) => {
+                    if (status >= 200 && status < 300 && body.success) {
+                        if (reportStatus) {
+                            reportStatus.innerText = 'Alert sent to Discord.';
+                            reportStatus.className = 'small text-success mt-2';
+                        }
+                    } else {
+                        if (reportStatus) {
+                            reportStatus.innerText = 'Could not send alert (see server).';
+                            reportStatus.className = 'small text-danger mt-2';
+                        }
+                        reportBtn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error('Report to Discord failed', err);
+                    if (reportStatus) {
+                        reportStatus.innerText = 'Network error sending alert.';
+                        reportStatus.className = 'small text-danger mt-2';
+                    }
+                    reportBtn.disabled = false;
+                });
+            });
+        }
+    } catch (e) { console.warn('attach report handler failed', e); }
+
     // Animate results appearance
     animateResults();
 }

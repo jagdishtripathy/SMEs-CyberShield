@@ -21,6 +21,7 @@ from users.database import (
     update_user_badges,
     save_url_check,
 )
+from utils.alert_notifier import send_discord_alert
 from users.utils.recommendations import get_ai_recommendations_for_quiz, get_recommendation_message
 
 # =============================================================================
@@ -280,6 +281,41 @@ def url_checker():
         'gemini_analysis': gemini_analysis,
         'risk_level': risk_level
     })
+
+
+# =============================================================================
+# DISCORD ALERT (from UI)
+# =============================================================================
+@user_bp.route('/alert/discord', methods=['POST'])
+@login_required
+def alert_discord():
+    """Endpoint to send a user-triggered alert to Discord via webhook.
+
+    Expected JSON: { url: <string>, message: <optional string> }
+    """
+    try:
+        data = request.get_json() or {}
+        url = data.get('url')
+        custom = data.get('message')
+
+        # Build a concise alert payload
+        user_label = getattr(current_user, 'username', 'unknown')
+        message = custom or (f"User {user_label} reported a suspicious URL: {url}" if url else f"User {user_label} requested assistance from the URL Checker")
+
+        alert = {
+            'title': 'User Dashboard Alert',
+            'message': message,
+            'severity': 'high',
+            'timestamp': datetime.utcnow().isoformat(),
+            'source_ip': request.remote_addr
+        }
+
+        success = send_discord_alert(alert)
+        status = 200 if success else 500
+        return jsonify({'success': bool(success)}), status
+    except Exception as e:
+        logging.exception('Failed to send discord alert')
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # =============================================================================
 # HELPER FUNCTIONS

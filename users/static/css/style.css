@@ -1,485 +1,265 @@
-body {
-    background-color: #f8f9fa;
-}
-
-.card {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border: 1px solid rgba(0, 0, 0, 0.125);
-}
-
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-}
-
-.navbar-brand {
-    font-weight: bold;
-}
-
-.badge {
-    font-size: 0.75em;
-}
-
-.progress {
-    height: 70px;
-}
-
-.question-container {
-    padding: 1rem;
-    border: 1px solid #e9ecef;
-    border-radius: 0.375rem;
-    margin-bottom: 1rem;
-}
-
-.form-check-input:checked {
-    background-color: #5296fb;
-    border-color: #5295fb;
-}
-
-.btn {
-    border-radius: 0.375rem;
-}
-
-.table th {
-    border-top: none;
-    font-weight: 600;
-}
-
-.alert {
-    border: none;
-    border-radius: 0.5rem;
-}
-
-.modal-content {
-    border: none;
-    border-radius: 0.5rem;
-}
-
-.spinner-border {
-    width: 3rem;
-    height: 3rem;
-}
-
-/* Custom badge styles */
-.badge.bg-warning {
-    color: #000;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .container {
-        padding-left: 15px;
-        padding-right: 15px;
-    }
-    
-    .card-body {
-        padding: 1rem;
-    }
-}
-
-/* Toast Notifications */
-#toastContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.toast {
-    min-width: 300px;
-    border: none;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    animation: slideInRight 0.3s ease-out;
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.toast.show {
-    opacity: 1;
-}
-
-.toast-header {
-    border-bottom: none;
-    border-radius: 0.5rem 0.5rem 0 0;
-    font-weight: 600;
-    padding: 0.75rem 1rem;
-}
-
-.toast-body {
-    padding: 0.75rem 1rem;
-    background-color: #ffffff;
-    border-radius: 0 0 0.5rem 0.5rem;
-}
-
-/* Security Components Styling */
-.list-group-item {
-    border-left: 4px solid #dee2e6 !important;
-    transition: all 0.2s ease;
-}
-
-.list-group-item:hover {
-    background-color: #f8f9fa;
-}
-
-/* Color-coded security status */
-.list-group-item:has(.bg-success) {
-    border-left-color: #198754 !important;
-    background-color: #f0f9f6 !important;
-}
-
-.list-group-item:has(.bg-warning) {
-    border-left-color: #ffc107 !important;
-    background-color: #fffbf0 !important;
-}
-
-.list-group-item:has(.bg-danger) {
-    border-left-color: #dc3545 !important;
-    background-color: #ffe5e5 !important;
-}
-
-.list-group-item:has(.bg-secondary) {
-    border-left-color: #6c757d !important;
-    background-color: #f5f5f5 !important;
-}
-
-/* Badge styling with better contrast */
-.badge {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-}
-
-.badge.bg-success {
-    background-color: #198754 !important;
-    color: #fff;
-}
-
-.badge.bg-warning {
-    background-color: #ffc107 !important;
-}
-
-.badge.bg-danger {
-    background-color: #dc3545 !important;
-    color: #fff;
-}
-
-/* Score Gauge Tooltip */
-.score-tooltip {
-    position: absolute;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 16px;
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    white-space: nowrap;
-}
-
-.score-tooltip::after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-top: 6px solid #667eea;
-}
-
-/* Password Show/Hide Toggle Styles */
-.password-input-group {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
+/* Theme variables and cleaned CSS for user templates */
+
+:root {
+  --bg: #f8f9fa;
+  --text: #212529;
+  --muted: #6c757d;
+  --card-bg: #ffffff;
+  --card-border: #e6eef8;
+  --card-shadow: 0 12px 30px rgba(2,6,23,0.06);
+  --card-surface: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  /* Match admin navbar color for consistency */
+  --nav-bg: #0b1220; /* same as top-level admin theme */
+  --nav-text: #ffffff;
+
+  --accent-gradient: linear-gradient(90deg,#0ea5e9 0%, #3b82f6 50%, #7c3aed 100%);
+  --accent-solid: #3b82f6;
+  --success-color: #16a34a;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --status-success-bg: rgba(22,163,74,0.06);
+  --status-warning-bg: rgba(245,158,11,0.06);
+  --status-danger-bg: rgba(239,68,68,0.06);
+  --btn-outline: rgba(255,255,255,0.12);
+
+  /* Additional semantic variables for consistency */
+  --panel-radius: 12px;
+  --panel-border-radius: 12px;
+  --error-text: #7f1d1d;
+  --error-border: #dc2626;
+  --error-bg: rgba(220,38,38,0.06);
+  --bg-dark: #0b1220;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace;
+  --font-primary: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  --debug-color: #a855f7;
+}
+
+[data-theme="dark"] {
+  --bg: #071026;
+  --text: #e6eef8;
+  --muted: #9aa6b2;
+  --card-bg: linear-gradient(180deg, rgba(6,10,20,0.88), rgba(8,14,24,0.96));
+  --card-border: rgba(255,255,255,0.04);
+  --card-shadow: 0 12px 30px rgba(0,0,0,0.6);
+  --card-surface: linear-gradient(180deg, rgba(12,18,32,0.65) 0%, rgba(6,10,20,0.9) 100%);
+  --nav-bg: #031226;
+  --nav-text: #e6eef8;
+  --accent-gradient: linear-gradient(90deg,#60a5fa 0%, #34d399 50%, #7c3aed 100%);
+  --accent-solid: #60a5fa;
+  --success-color: #22c55e;
+  --warning-color: #facc15;
+  --error-color: #f87171;
+  --status-success-bg: rgba(34,197,94,0.06);
+  --status-warning-bg: rgba(250,204,21,0.04);
+  --status-danger-bg: rgba(248,113,113,0.06);
+
+  /* Dark theme semantic overrides */
+  --panel-radius: 12px;
+  --panel-border-radius: 12px;
+  --error-text: #fecaca;
+  --error-border: #ef4444;
+  --error-bg: rgba(239,68,68,0.06);
+  --bg-dark: #e6eef8;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace;
+  --font-primary: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  --debug-color: #c4b5fd;
+}
+
+* { transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease; }
+html, body { height: 100%; }
+body { margin: 0; font-family: var(--font-primary); background: var(--bg); color: var(--text); -webkit-font-smoothing:antialiased; }
+
+/* Cards */
+.card { background: var(--card-surface); border: 1px solid var(--card-border); border-radius: 12px; box-shadow: var(--card-shadow); color: var(--text); }
+.card-header { background: transparent; border-bottom: 1px solid var(--card-border); }
+
+/* Auth card (login/register) professional sizing */
+.auth-card {
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(2,6,23,0.08);
+  overflow: hidden;
+}
+.auth-card .card-header { padding: 20px 24px; border-bottom: none; background: transparent; }
+.auth-card .card-body { padding: 15px 12px; }
+.auth-card .form-control { padding: 12px 14px; font-size: 0.98rem; }
+.auth-card .btn { padding: 12px 14px; font-weight:700; border-radius: 10px; }
+.auth-card .card-header h4 { margin:0; font-size:1.15rem; }
+
+/* Position auth cards 70px below the navbar instead of vertically centered */
+.auth-row {
+  align-items: flex-start; /* start from top */
+  padding-top: 70px; /* distance below navbar */
+  min-height: calc(100vh - 70px);
+}
+
+/* On very small screens reduce the top padding so the card remains accessible */
+@media (max-width: 576px) {
+  .auth-row { padding-top: 40px; min-height: calc(100vh - 40px); }
+}
+
+/* Navbar */
+#mainNavbar { background: var(--nav-bg); color: var(--nav-text); }
+.navbar-brand { font-weight:700; color:var(--nav-text) !important; }
+#mainNavbar .nav-link { color: var(--nav-text) !important; padding: 0.5rem 0.75rem; }
+#mainNavbar .nav-link:hover { color: var(--accent-solid) !important; transform: translateY(-2px); }
 
-.password-input-group .form-control {
-    padding-right: 2.5rem;
+/* Smoothly invert logo/icon images in navbar when dark theme is active (admin-like inversion) */
+#mainNavbar img, #mainNavbar .brand-logo {
+  transition: filter 0.28s ease, opacity 0.28s ease;
+  filter: none;
 }
 
-.btn-password-toggle {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #6c757d;
-    font-size: 1rem;
-    padding: 0.25rem 0.5rem;
-    transition: color 0.2s ease;
-    z-index: 10;
+[data-theme="dark"] #mainNavbar img, [data-theme="dark"] #mainNavbar .brand-logo {
+  /* invert colors for small icons/logos to match dark nav look; tweak as needed per asset */
+  filter: invert(1) saturate(0.95) contrast(1.05);
 }
 
-.btn-password-toggle:hover {
-    color: #495057;
-}
+/* Utility: apply inversion class to any element that should flip on dark */
+.invert-on-dark { transition: filter 0.28s ease; }
+[data-theme="dark"] .invert-on-dark { filter: invert(1) saturate(0.95) contrast(1.05); }
 
-.btn-password-toggle:focus {
-    outline: none;
-    color: #0d6efd;
+/* Ensure core text elements follow theme colors (override Bootstrap utility classes if needed) */
+/* General text */
+body, .container, .card, .card-body, .card-header, .list-group-item, p, li, span, td, th, table, thead, tbody, ul, ol {
+  color: var(--text) !important;
 }
 
-.btn-password-toggle.show {
-    color: #0d6efd;
-}
+/* Links use accent color to remain visible */
+a { color: var(--accent-solid) !important; }
+a:hover { color: var(--accent-solid); text-decoration: underline; }
 
-/* ============================================
-   RECOMMENDATION CARDS STYLING
-   ============================================ */
-
-.recommendation-card {
-    transition: all 0.3s ease;
-    border: 1px solid #e9ecef;
-    position: relative;
-    overflow: hidden;
-}
+/* Bootstrap utility overrides */
+.text-muted { color: var(--muted) !important; }
+.text-dark { color: var(--text) !important; }
+.text-white { color: #fff !important; }
 
-.recommendation-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #0d6efd, #0dcaf0, #198754);
-}
+/* Tables: ensure readable on dark theme */
+.table, .table td, .table th { background: transparent; color: var(--text) !important; }
 
-.recommendation-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 123, 255, 0.15);
-    border-color: #0d6efd;
-}
+/* Make navbar visually distinct from page content when theme is dark */
+#mainNavbar { border-bottom: 1px solid rgba(0,0,0,0.06); }
+[data-theme="dark"] #mainNavbar { box-shadow: 0 6px 18px rgba(2,6,23,0.6); border-bottom: 1px solid rgba(255,255,255,0.04); }
 
-.recommendation-card .card-header {
-    padding: 0.75rem 1rem;
-    border-bottom: 2px solid #f8f9fa;
-}
+/* Buttons: ensure contrast in dark */
+.btn, .btn * { color: inherit; }
+.btn-primary { color: #fff; }
 
-.recommendation-card .card-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #212529;
-    margin-bottom: 0.5rem;
+/* Content wrapper offset: keep main content/cards 100px below navbar */
+.content-wrapper {
+  margin-top: 100px;
 }
 
-.recommendation-card .card-text {
-    line-height: 1.6;
+/* If navbar is fixed in other styles, ensure body content doesn't hide behind it */
+body.has-fixed-navbar {
+  padding-top: calc(100px + 56px); /* 56px fallback navbar height */
 }
 
-.recommendation-card .card-footer {
-    padding: 1rem;
-    border-top: 1px solid #e9ecef;
+/* Add 30px gap on both sides of the navbar (left/right) */
+#mainNavbar > .container-fluid {
+  padding-left: 30px;
+  padding-right: 30px;
 }
 
-.recommendation-card .btn-outline-danger:hover {
-    background-color: #dc3545;
-    border-color: #dc3545;
-    transform: scale(1.02);
-}
+/* Ensure Bootstrap color utility classes reflect theme variables so buttons are readable */
+.bg-primary { background-color: var(--accent-solid) !important; color: #fff !important; }
+.btn-primary { background: var(--accent-gradient); color: #fff !important; border: none; }
+.btn-success { background: linear-gradient(90deg, #16a34a, #22c55e); color: #fff !important; border: none; }
+.btn-info { background: linear-gradient(90deg, #0ea5e9, #06b6d4); color: #fff !important; border: none; }
 
-/* Badge styling for skill levels */
-.badge.bg-primary {
-    font-weight: 600;
-    padding: 0.5rem 0.75rem;
+/* Make card elements that use bg-primary look more attractive (gradient) */
+.card.bg-primary {
+  background: var(--accent-gradient) !important;
+  border-color: transparent !important;
 }
-
-/* Info alert for recommendations header */
-#recommendationsContainer .alert-info {
-    background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
-    border: none;
-    color: white;
+.card.bg-primary .card-body,
+.card.bg-primary .card-header {
+  color: #fff !important;
 }
 
-#recommendationsContainer .alert-info .alert-heading {
-    color: white;
-    font-weight: 600;
-}
+/* Specific fix: ensure button text and icon display inside cards (dashboard quick actions) */
+.card .btn { color: #fff !important; }
 
-#recommendationsContainer .alert-info .badge {
-    background-color: rgba(255, 255, 255, 0.25);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-}
+/* If any button uses outline-secondary (toggle), ensure contrast */
+.btn-outline-secondary { color: var(--nav-text); border-color: var(--btn-outline); }
 
-/* Loading spinner */
-.spinner-border-primary {
-    border-color: #0d6efd;
-    border-right-color: transparent;
-}
+/* Remove underlines from anchors and buttons globally (per request) */
+a, a:visited, a:focus, a:hover { text-decoration: none !important; }
+.btn, .btn * { text-decoration: none !important; }
 
-/* Success message styling */
-#recommendationsContainer .alert-success {
-    background-color: #d1e7dd;
-    border: 1px solid #badbcc;
-    color: #0f5132;
-}
+/* Ensure the username in navbar is always a light color for visibility */
+#mainNavbar .navbar-username { color: var(--nav-text) !important; font-weight:600; }
 
-/* Small text in recommendations */
-.recommendation-card small {
-    display: block;
-    margin-bottom: 0.25rem;
-}
+/* Also ensure the small badge beside username contrasts */
+#mainNavbar .navbar-username .badge { color: #fff !important; }
 
-.recommendation-card small strong {
-    color: #0d6efd;
-}
+/* Theme toggle */
+#themeToggle { color: var(--nav-text); background: transparent; border:1px solid var(--btn-outline); padding:6px 8px; border-radius:8px; }
+#themeToggle:hover { transform: translateY(-2px); }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .recommendation-card {
-        margin-bottom: 1rem;
-    }
-    
-    .recommendation-card .card-title {
-        font-size: 1rem;
-    }
-}
+/* Badges */
+.badge { font-size:0.85rem; padding:0.35rem 0.6rem; }
+.badge.bg-success { background:var(--success-color); color:#fff; }
+.badge.bg-warning { background:var(--warning-color); color:#000; }
+.badge.bg-danger { background:var(--error-color); color:#fff; }
 
-/* Animation for recommendations appearing */
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* Lists */
+.list-group-item { border-left:4px solid var(--card-border) !important; transition: background 0.2s ease, border-color 0.2s ease; }
+.list-group-item:hover { background: rgba(0,0,0,0.02); }
+.list-group-item:has(.bg-success) { border-left-color:var(--success-color) !important; background:var(--status-success-bg) !important; }
+.list-group-item:has(.bg-warning) { border-left-color:var(--warning-color) !important; background:var(--status-warning-bg) !important; }
+.list-group-item:has(.bg-danger) { border-left-color:var(--error-color) !important; background:var(--status-danger-bg) !important; }
 
-.recommendation-card {
-    animation: slideInUp 0.5s ease-out;
-}
+/* Tooltip */
+.score-tooltip { position:absolute; background:var(--accent-gradient); color:#fff; padding:8px 14px; border-radius:8px; font-weight:700; font-size:14px; box-shadow:0 8px 20px rgba(2,6,23,0.4); opacity:0; visibility:hidden; }
+.score-tooltip::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid rgba(0,0,0,0.08); }
 
-/* Perfect Score Celebration Animations */
-.celebration-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 2000;
-    overflow: hidden;
-}
+/* Buttons */
+.btn { border-radius:8px; }
+.btn-primary { background:var(--accent-gradient); color:#fff; border:none; }
+.btn-primary:hover { transform:translateY(-3px); box-shadow:0 18px 36px rgba(59,130,246,0.12); }
 
-.confetti {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    font-size: 24px;
-    line-height: 20px;
-    text-align: center;
-}
+/* Password toggle */
+.password-input-group { position:relative; }
+.btn-password-toggle { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); }
+.btn-password-toggle:hover { color:var(--text); }
 
-@keyframes fall {
-    to {
-        transform: translateY(100vh) rotate(720deg);
-        opacity: 0;
-    }
-}
+/* Recommendations */
+.recommendation-card { border:1px solid var(--card-border); overflow:hidden; border-radius:10px; }
+.recommendation-card::before { content:''; position:absolute; left:0; right:0; top:0; height:4px; background:var(--accent-gradient); }
+.recommendation-card:hover { transform:translateY(-6px); box-shadow:0 20px 40px rgba(2,6,23,0.18); border-color:var(--accent-solid); }
+.recommendation-card .card-title { color:var(--text); }
 
-@keyframes sway {
-    0%, 100% {
-        transform: translateX(0) translateY(0) rotate(0deg);
-    }
-    25% {
-        transform: translateX(100px) translateY(25vh) rotate(180deg);
-    }
-    50% {
-        transform: translateX(-50px) translateY(50vh) rotate(360deg);
-    }
-    75% {
-        transform: translateX(75px) translateY(75vh) rotate(540deg);
-    }
-}
+/* Toasts */
+#toastContainer { display:flex; flex-direction:column; gap:12px; }
+.toast { min-width:300px; border-radius:10px; box-shadow:0 10px 30px rgba(2,6,23,0.12); }
+.toast-body { background:var(--card-bg); }
 
-@keyframes bounce {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.2);
-    }
-}
+/* Spinner */
+.spinner-border-primary { border-color:var(--accent-solid); border-right-color:transparent; }
 
-.confetti {
-    animation: sway 3s ease-in forwards, fall 3s ease-in forwards;
-}
+/* Celebration */
+.celebration-message { color:var(--success-color); font-weight:800; }
 
-.celebration-text {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2001;
-    text-align: center;
-    pointer-events: none;
-}
+@media (max-width:768px) { .container{ padding-left:12px; padding-right:12px; } #mainNavbar .nav-link{ padding:8px 10px; } }
 
-.celebration-emoji {
-    font-size: 5rem;
-    animation: bounce 0.6s ease-in-out infinite;
-    display: inline-block;
-    margin: 0 10px;
-}
+/* Small helper */
+.muted { color:var(--muted); }
 
-.celebration-message {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #28a745;
-    margin-top: 20px;
-    animation: slideInDown 0.8s ease-out;
-}
+/* Recommendation animation */
+@keyframes slideInUp { from{ opacity:0; transform:translateY(20px);} to{ opacity:1; transform:translateY(0);} }
+.recommendation-card { animation: slideInUp 0.5s ease-out; }
 
-@keyframes slideInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+/* Confetti & celebration retained */
+.celebration-container{ position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:2000; overflow:hidden; }
+.confetti{ position:absolute; width:20px; height:20px; font-size:24px; line-height:20px; text-align:center; }
+@keyframes fall{ to{ transform:translateY(100vh) rotate(720deg); opacity:0; } }
+@keyframes sway{ 0%,100%{ transform:translateX(0) translateY(0) rotate(0deg);} 25%{ transform:translateX(100px) translateY(25vh) rotate(180deg);} 50%{ transform:translateX(-50px) translateY(50vh) rotate(360deg);} 75%{ transform:translateX(75px) translateY(75vh) rotate(540deg);} }
+@keyframes bounce{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.2);} }
+.confetti{ animation:sway 3s ease-in forwards, fall 3s ease-in forwards; }
+.celebration-text{ position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2001; text-align:center; pointer-events:none; }
+.celebration-emoji{ font-size:5rem; animation:bounce .6s ease-in-out infinite; display:inline-block; margin:0 10px; }
+.celebration-message{ font-size:2.5rem; font-weight:bold; margin-top:20px; animation:slideInDown .8s ease-out; }
+@keyframes slideInDown{ from{ opacity:0; transform:translateY(-50px);} to{ opacity:1; transform:translateY(0);} }
 
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-}
+/* end */
 
-.perfect-score-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: white;
-    padding: 15px 30px;
-    border-radius: 50px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-top: 15px;
-    animation: pulse 1s ease-in-out infinite;
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-}

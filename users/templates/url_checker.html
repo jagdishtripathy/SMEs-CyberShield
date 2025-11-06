@@ -111,35 +111,49 @@
 
 {% block scripts %}
 <script>
-document.getElementById('urlCheckForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const url = document.getElementById('urlInput').value;
-    const loading = document.getElementById('loading');
-    const results = document.getElementById('results');
-    const riskStatus = document.getElementById('risk-status');
-    
-    // Show loading, hide previous results
-    loading.style.display = 'block';
-    results.style.display = 'none';
-    riskStatus.innerHTML = '';
+// If another script (users/static/js/script.js) already bound the form, skip adding a second handler.
+(function() {
+    const urlCheckForm = document.getElementById('urlCheckForm');
+    if (!urlCheckForm) return;
 
-    fetch('/users/url_checker', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ url: url })
-    })
-    .then(response => response.json())
-    .then(data => {
-        loading.style.display = 'none';
-        displayResults(data);
-    })
-    .catch(error => {
-        loading.style.display = 'none';
-        results.innerHTML = `<div class="alert alert-danger">Error analyzing URL: ${error.message}</div>`;
-        results.style.display = 'block';
+    // If script.js already attached a handler, it will set dataset.boundBy = 'scriptjs'
+    if (urlCheckForm.dataset.boundBy === 'scriptjs') {
+        // Let the centralized handler (script.js) call checkURL() -> displayURLResults
+        // but we still prefer the template's displayResults function if present —
+        // to avoid conflicting UI updates, we wrap and let script.js's handler run.
+        return;
+    }
+
+    urlCheckForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const url = document.getElementById('urlInput').value;
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const riskStatus = document.getElementById('risk-status');
+        
+        // Show loading, hide previous results
+        loading.style.display = 'block';
+        results.style.display = 'none';
+        riskStatus.innerHTML = '';
+
+        fetch('/users/url_checker', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ url: url })
+        })
+        .then(response => response.json())
+        .then(data => {
+            loading.style.display = 'none';
+            displayResults(data);
+        })
+        .catch(error => {
+            loading.style.display = 'none';
+            results.innerHTML = `<div class="alert alert-danger">Error analyzing URL: ${error.message}</div>`;
+            results.style.display = 'block';
+        });
     });
-});
+})();
 
 function displayResults(data) {
     const results = document.getElementById('results');
@@ -163,13 +177,73 @@ function displayResults(data) {
         riskClass = 'risk-low';
     }
 
-    // Display risk container
-    riskStatus.innerHTML = `<div class="risk-container ${riskClass} mb-3">
-                                <h5><i class="fas fa-exclamation-triangle"></i> Overall Risk: ${riskLevel}</h5>
-                            </div>`;
+    // Heuristic: detect obvious typosquatting / leetspeak (e.g., g00gle -> google)
+    (function detectTyposquatLocal() {
+        try {
+            const raw = (document.getElementById('urlInput')?.value || '').toLowerCase().trim();
+            if (!raw) return;
+            let host = raw;
+            try {
+                const u = new URL(raw.includes('://') ? raw : 'http://' + raw);
+                host = u.hostname;
+            } catch (e) {
+                host = raw.split('/')[0];
+            }
+            const norm = host.replace(/0/g,'o').replace(/1/g,'l').replace(/3/g,'e').replace(/4/g,'a').replace(/5/g,'s').replace(/7/g,'t').replace(/\|/g,'l');
+            const known = ['google','instagram','facebook','twitter','amazon','paypal','microsoft','apple','linkedin','github'];
+            for (const brand of known) {
+                if (norm.includes(brand)) {
+                    riskLevel = 'High Risk';
+                    riskClass = 'risk-high';
+                    break;
+                }
+            }
+        } catch (e) { console.warn('typosquat detect error', e); }
+    })();
 
-    // Build analysis results HTML
-    let resultsHTML = '';
+    // Short summary for non-technical users
+    function shortSummary(level) {
+        if (level === 'High Risk') return {
+            title: 'Danger — Do Not Click',
+            text: 'This is likely a fake or malicious site (typo-squatting). Do not open it.',
+            actions: ['Do not click', 'Delete/report the message', 'Contact IT if you clicked']
+        } else if (level === 'Medium Risk') return {
+            title: 'Be Careful',
+            text: 'This link may be suspicious. Verify before visiting.',
+            actions: ['Do not click immediately', 'Check sender', 'Ask IT if unsure']
+        }
+        return { title: 'Low Risk — Caution', text: 'Looks mostly safe but double-check the address.', actions: ['Check spelling', 'Ensure https', 'Don\'t enter credentials'] };
+    }
+
+    const short = shortSummary(riskLevel);
+
+    // Display short summary prominently using Bootstrap alert for reliable color
+    const alertLevel = (riskLevel === 'High Risk') ? 'danger' : (riskLevel === 'Medium Risk') ? 'warning' : 'success';
+    riskStatus.innerHTML = `
+        <div class="alert alert-${alertLevel} mb-3" role="alert">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> ${short.title}</h5>
+                    <p class="mb-1">${short.text}</p>
+                </div>
+                <div class="text-end">
+                    <button id="reportDiscordBtn" class="btn btn-sm btn-outline-danger" title="Send alert to Discord"><i class="fab fa-discord"></i> Report to Discord</button>
+                    <div id="reportStatus" class="small mt-2 text-end"></div>
+                </div>
+            </div>
+            <hr>
+            <strong>Quick actions:</strong>
+            <ul class="mb-0 text-start">
+                <li>${short.actions[0]}</li>
+                <li>${short.actions[1]}</li>
+                <li>${short.actions[2] || ''}</li>
+            </ul>
+        </div>
+        <p><a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#detailsCollapse" role="button" aria-expanded="false" aria-controls="detailsCollapse">Show details</a></p>
+    `;
+
+    // Build analysis results HTML (hidden inside collapse)
+    let resultsHTML = `<div class="collapse" id="detailsCollapse">`;
     
     if (data.virustotal) {
         const vt = data.virustotal;
@@ -189,6 +263,72 @@ function displayResults(data) {
             </div>
         `;
     }
+
+    // Append AI analysis and recommendations into the collapse as well
+    if (data.gemini_analysis) {
+        resultsHTML += `
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6><i class="fas fa-robot"></i> AI Security Analysis & Recommendations</h6>
+                </div>
+                <div class="card-body">
+                    <div class="gemini-analysis">${formatGeminiAnalysis(data.gemini_analysis)}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Simple recommendations list
+    resultsHTML += `
+        <div class="card mt-3">
+            <div class="card-header"><h6><i class="fas fa-lightbulb"></i> Recommended Actions</h6></div>
+            <div class="card-body">
+                <ul>
+                    <li>${riskLevel === 'High Risk' ? 'Do not click the link and report to IT.' : 'Use caution and verify sender.'}</li>
+                    <li>Type the official address manually if you need the site (e.g., instagram.com).</li>
+                    <li>Do not enter passwords or personal info on suspicious sites.</li>
+                </ul>
+            </div>
+        </div>
+    `;
+
+    // Close collapse wrapper and display
+    resultsHTML += `</div>`;
+    results.innerHTML = resultsHTML;
+    results.style.display = 'block';
+
+    // Attach report-to-Discord button handler
+    try {
+        const reportBtn = document.getElementById('reportDiscordBtn');
+        const reportStatus = document.getElementById('reportStatus');
+        if (reportBtn) {
+            reportBtn.addEventListener('click', function () {
+                reportBtn.disabled = true;
+                reportStatus.innerText = 'Sending alert...';
+                fetch('/users/alert/discord', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: (document.getElementById('urlInput')?.value || '' ) })
+                })
+                .then(r => r.json().then(body => ({ status: r.status, body })))
+                .then(({ status, body }) => {
+                    if (status >= 200 && status < 300 && body.success) {
+                        reportStatus.innerText = 'Alert sent to Discord.';
+                        reportStatus.className = 'small text-success mt-2';
+                    } else {
+                        reportStatus.innerText = 'Could not send alert (see server).';
+                        reportStatus.className = 'small text-danger mt-2';
+                        reportBtn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error('Report to Discord failed', err);
+                    reportStatus.innerText = 'Network error sending alert.';
+                    reportStatus.className = 'small text-danger mt-2';
+                    reportBtn.disabled = false;
+                });
+        }
+    } catch (e) { console.warn('attach report handler failed', e); }
 }
 </script>
 {% endblock %}

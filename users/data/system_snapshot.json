@@ -7,21 +7,21 @@
   },
   "system": {
     "cpu": {
-      "cpu_percent": 29.1,
+      "cpu_percent": 5.7,
       "cpu_count": 12
     },
     "memory": {
       "total": 16870006784,
-      "available": 7374127104,
-      "percent": 56.3,
-      "used": 9495879680,
-      "free": 7374127104
+      "available": 6702981120,
+      "percent": 60.3,
+      "used": 10167025664,
+      "free": 6702981120
     },
     "swap": {
-      "total": 4563402752,
-      "used": 474030080,
-      "free": 4089372672,
-      "percent": 10.4,
+      "total": 5637144576,
+      "used": 556666880,
+      "free": 5080477696,
+      "percent": 9.9,
       "sin": 0,
       "sout": 0
     },
@@ -32,9 +32,9 @@
         "fstype": "NTFS",
         "usage": {
           "total": 511075938304,
-          "used": 154111557632,
-          "free": 356964380672,
-          "percent": 30.2
+          "used": 126100312064,
+          "free": 384975626240,
+          "percent": 24.7
         }
       },
       {
@@ -43,9 +43,9 @@
         "fstype": "NTFS",
         "usage": {
           "total": 500090007552,
-          "used": 261469581312,
-          "free": 238620426240,
-          "percent": 52.3
+          "used": 179467952128,
+          "free": 320622055424,
+          "percent": 35.9
         }
       }
     ]
@@ -54,7 +54,7 @@
   "defender": {
     "AntivirusEnabled": true,
     "RealTimeProtectionEnabled": true,
-    "AntivirusSignatureAge": 1
+    "AntivirusSignatureAge": 3
   },
   "firewall": [
     {
